@@ -1,5 +1,5 @@
 /****************************************************************************
- * generic_rom.sv
+ * generic_rom_bfm.sv
  ****************************************************************************/
  
 `ifndef GENERIC_ROM_BFM_NAME
@@ -12,8 +12,8 @@
  * TODO: Add module documentation
  */
 interface `GENERIC_ROM_BFM_NAME #(
-			parameter int DATA_WIDTH	= 32,
 			parameter int ADDRESS_WIDTH	= 32,
+			parameter int DATA_WIDTH	= 32,
 			parameter INIT_FILE = ""
 		) (
 			input						i_clk,
@@ -46,6 +46,7 @@ interface `GENERIC_ROM_BFM_NAME #(
     	longint unsigned	offset,
     	int unsigned 		data);
     	if (offset[OFFSET_HIGH_BIT:2] < (2**ADDRESS_WIDTH)-1) begin
+    		$display("rom[%0d] = 'h%08h", offset[OFFSET_HIGH_BIT:2], data);
 	    	rom[offset[OFFSET_HIGH_BIT:2]] = data;
     	end else begin
 	    	$display("Error: rom(32)[%0d] = 'h%08h", offset[(ADDRESS_WIDTH-1):2], data);
@@ -92,8 +93,9 @@ interface `GENERIC_ROM_BFM_NAME #(
 
 
 	always @(posedge i_clk) begin
-		read_addr <= i_address;
-		read_data <= rom[read_addr];
+//		read_addr <= i_address;
+//		read_data <= rom[read_addr];
+		read_data <= rom[i_address];
 	end
 
 	assign o_read_data = read_data;

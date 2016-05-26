@@ -12,6 +12,7 @@ class generic_rom_agent `GENERIC_ROM_AGENT_PLIST extends uvm_agent;
 	typedef generic_rom_driver `GENERIC_ROM_AGENT_PARAMS  drv_t;
 	typedef generic_rom_monitor `GENERIC_ROM_AGENT_PARAMS mon_t;
 	typedef generic_rom_config  `GENERIC_ROM_AGENT_PARAMS cfg_t;
+	typedef generic_rom_rw_api  `GENERIC_ROM_AGENT_PARAMS api_t;
 
 	const string report_id = "generic_rom_agent";
 
@@ -24,9 +25,15 @@ class generic_rom_agent `GENERIC_ROM_AGENT_PLIST extends uvm_agent;
 	
 	cfg_t											m_cfg;
 	
+	api_t 											m_api;
 	
 	function new(string name, uvm_component parent=null);
 		super.new(name, parent);
+		m_api = new(this);
+	endfunction
+	
+	function sv_bfms_rw_api_if get_api();
+		return m_api;
 	endfunction
 	
 	function void build_phase(uvm_phase phase);
@@ -74,6 +81,30 @@ class generic_rom_agent `GENERIC_ROM_AGENT_PLIST extends uvm_agent;
 		
 	endfunction
 
+	virtual task write8(
+			bit[31:0]			addr,
+			bit[7:0]			data);
+		m_cfg.vif.generic_rom_write8(addr, data);
+	endtask
+	
+	virtual task read8(
+			bit[31:0]			addr,
+			output bit[7:0]		data);
+		m_cfg.vif.generic_rom_read8(addr, data);
+	endtask
+	
+	virtual task write32(
+			bit[31:0]			addr,
+			bit[31:0]			data);
+		m_cfg.vif.generic_rom_write32(addr, data);
+	endtask
+	
+	virtual task read32(
+			bit[31:0]			addr,
+			output bit[31:0]	data);
+		m_cfg.vif.generic_rom_read32(addr, data);
+	endtask
+	
 endclass
 
 

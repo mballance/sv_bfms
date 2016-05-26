@@ -1,19 +1,17 @@
 /****************************************************************************
- * generic_sram_byte_en_rw_api.svh
+ * generic_rom_rw_api.svh
  ****************************************************************************/
 
 /**
- * Class: generic_sram_byte_en_rw_api
+ * Class: generic_rom_rw_api
  * 
  * TODO: Add class documentation
  */
-typedef class generic_sram_byte_en_agent;
-class generic_sram_byte_en_rw_api `GENERIC_SRAM_BYTE_EN_PLIST extends sv_bfms_rw_api_if;
-	typedef generic_sram_byte_en_agent `GENERIC_SRAM_BYTE_EN_PARAMS agent_t;
-	
-	agent_t						m_agent;
+typedef class generic_rom_agent;
+class generic_rom_rw_api `GENERIC_ROM_AGENT_PLIST extends sv_bfms_rw_api_if;
+	generic_rom_agent `GENERIC_ROM_AGENT_PARAMS m_agent;
 
-	function new(agent_t agent);
+	function new(generic_rom_agent `GENERIC_ROM_AGENT_PARAMS agent);
 		m_agent = agent;
 	endfunction
 

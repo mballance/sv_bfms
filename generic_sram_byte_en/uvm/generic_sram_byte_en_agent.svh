@@ -6,6 +6,7 @@
 class generic_sram_byte_en_agent #(parameter int ADDRESS_WIDTH=7, parameter int DATA_WIDTH=32) extends uvm_agent;
 	
 	typedef generic_sram_byte_en_agent #(ADDRESS_WIDTH,DATA_WIDTH) this_t;
+	typedef generic_sram_byte_en_rw_api `GENERIC_SRAM_BYTE_EN_PARAMS api_t;
 	`uvm_component_param_utils (this_t)
 
 
@@ -23,10 +24,16 @@ class generic_sram_byte_en_agent #(parameter int ADDRESS_WIDTH=7, parameter int 
 	uvm_analysis_port #(generic_sram_byte_en_seq_item)		m_drv_out_ap;
 	
 	cfg_t													m_cfg;
+	api_t													m_api;
 	
 	
 	function new(string name, uvm_component parent=null);
 		super.new(name, parent);
+		m_api = new(this);
+	endfunction
+	
+	function sv_bfms_rw_api_if get_api();
+		return m_api;
 	endfunction
 	
 	function void build_phase(uvm_phase phase);
@@ -73,6 +80,31 @@ class generic_sram_byte_en_agent #(parameter int ADDRESS_WIDTH=7, parameter int 
 		end
 		
 	endfunction
+	
+	virtual task write8(
+		bit[31:0]			addr,
+		bit[7:0]			data);
+		m_cfg.vif.generic_sram_byte_en_write8(addr, data);
+	endtask
+	
+	virtual task read8(
+		bit[31:0]			addr,
+		output bit[7:0]		data);
+		m_cfg.vif.generic_sram_byte_en_read8(addr, data);
+	endtask
+	
+	virtual task write32(
+		bit[31:0]			addr,
+		bit[31:0]			data);
+		m_cfg.vif.generic_sram_byte_en_write32(addr, data);
+	endtask
+	
+	virtual task read32(
+		bit[31:0]			addr,
+		output bit[31:0]	data);
+		m_cfg.vif.generic_sram_byte_en_read32(addr, data);
+	endtask
+	
 
 endclass
 
