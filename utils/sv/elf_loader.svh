@@ -296,7 +296,7 @@ class elf_loader;
 					end
 				
 					m_mem_if.write32(shdr.sh_addr+j, data);
-					$display("write32 'h%08h 'h%08h", shdr.sh_addr+j, data);
+//					$display("write32 'h%08h 'h%08h", shdr.sh_addr+j, data);
 					if (j+4 >= shdr.sh_size) begin
 						m_comp.uvm_report_info(ID, 
 							$psprintf("Load last addr='h%08h", shdr.sh_addr+j), UVM_MEDIUM);

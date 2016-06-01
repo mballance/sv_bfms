@@ -7,3 +7,6 @@
 -f ${SV_BFMS}/generic_rom/sv.f
 -f ${SV_BFMS}/generic_sram_byte_en/uvm/uvm.f
 -f ${SV_BFMS}/generic_sram_byte_en/sv.f
+
+-f ${SV_BFMS}/wb_uart/uvm/uvm.f
+-f ${SV_BFMS}/wb_uart/wb_uart.f

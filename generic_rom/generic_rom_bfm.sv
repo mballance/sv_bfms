@@ -46,7 +46,6 @@ interface `GENERIC_ROM_BFM_NAME #(
     	longint unsigned	offset,
     	int unsigned 		data);
     	if (offset[OFFSET_HIGH_BIT:2] < (2**ADDRESS_WIDTH)-1) begin
-    		$display("rom[%0d] = 'h%08h", offset[OFFSET_HIGH_BIT:2], data);
 	    	rom[offset[OFFSET_HIGH_BIT:2]] = data;
     	end else begin
 	    	$display("Error: rom(32)[%0d] = 'h%08h", offset[(ADDRESS_WIDTH-1):2], data);
