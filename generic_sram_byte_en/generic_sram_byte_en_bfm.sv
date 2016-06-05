@@ -50,28 +50,33 @@ interface `GENERIC_SRAM_BYTE_EN_BFM_NAME #(
 	input                           i_clk,
 	input      [DATA_WIDTH-1:0]     i_write_data,
 	input                           i_write_enable,
+	input							i_read_enable,
 	input      [ADDRESS_WIDTH-1:0]  i_address,
 	input      [DATA_WIDTH/8-1:0]   i_byte_enable,
 	output reg [DATA_WIDTH-1:0]     o_read_data
 );                                                     
 
 reg [DATA_WIDTH-1:0]   mem  [(2**ADDRESS_WIDTH)-1:0];
+reg                    init [(2**ADDRESS_WIDTH)-1:0];
 integer i;
 localparam OFFSET_HIGH_BIT = (ADDRESS_WIDTH + $clog2(DATA_WIDTH) - 1);
 localparam OFFSET_LOW_BIT = ($clog2(DATA_WIDTH/8));
+localparam report_uninit = 0;
 
 initial begin
 	$display("generic_sram_byte_en_bfm %m: DATA_WIDTH=%0d ADDRESS_WIDTH=%0d",
 			DATA_WIDTH, ADDRESS_WIDTH);
+	for (i=0; i<(2**ADDRESS_WIDTH); i++) begin
+		init[i] = 0;
+	end
 end
 
-always @(posedge i_clk)
-    begin
+always @(posedge i_clk) begin
     // read
     o_read_data <= i_write_enable ? {DATA_WIDTH{1'd0}} : mem[i_address];
-
+    
     // write
-    if (i_write_enable)
+    if (i_write_enable) begin
         for (i=0;i<DATA_WIDTH/8;i=i+1)
             begin
             mem[i_address][i*8+0] <= i_byte_enable[i] ? i_write_data[i*8+0] : mem[i_address][i*8+0] ;
@@ -83,7 +88,14 @@ always @(posedge i_clk)
             mem[i_address][i*8+6] <= i_byte_enable[i] ? i_write_data[i*8+6] : mem[i_address][i*8+6] ;
             mem[i_address][i*8+7] <= i_byte_enable[i] ? i_write_data[i*8+7] : mem[i_address][i*8+7] ;
             end                                                 
+		init[i_address] = 1;
+    end else begin
+    	if (report_uninit && init[i_address] == 0 && i_address != 0) begin
+    		$display("%m: Address 'h%08h uninitialized @ %t", 
+    				(i_address << OFFSET_LOW_BIT), $time);
+    	end
     end
+end
     
     task generic_sram_byte_en_write8(
     	longint unsigned	offset,

@@ -11,7 +11,7 @@ class generic_rom_monitor `GENERIC_ROM_AGENT_PLIST extends uvm_monitor;
 	
 	const string report_id = "generic_rom_monitor";
 	
-	`uvm_component_utils(generic_rom_monitor)
+	`uvm_component_param_utils(this_t)
 	
 	function new(string name, uvm_component parent);
 		super.new(name, parent);

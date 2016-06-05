@@ -21,9 +21,19 @@ interface `GENERIC_ROM_BFM_NAME #(
 			output [DATA_WIDTH-1:0]		o_read_data
 		);
 	reg[DATA_WIDTH-1:0]				rom[(2**ADDRESS_WIDTH)-1:0];
+	reg								init[(2**ADDRESS_WIDTH)-1:0];
 	reg[ADDRESS_WIDTH-1:0]			read_addr;
 	reg[DATA_WIDTH-1:0]				read_data;
 	localparam OFFSET_HIGH_BIT = (ADDRESS_WIDTH + $clog2(DATA_WIDTH) - 1);
+	localparam OFFSET_LOW_BIT  = ($clog2(DATA_WIDTH/8));
+	localparam report_uninit   = 0;
+	
+	initial begin
+		$display("OFFSET_HIGH_BIT=%0d ADDRESS_WIDTH=%0d", OFFSET_HIGH_BIT, ADDRESS_WIDTH);
+		for (int i=0; i<(2**ADDRESS_WIDTH); i++) begin
+			init[i] = 0;
+		end
+	end
 
     task generic_rom_write8(
     	longint unsigned	offset,
@@ -47,6 +57,7 @@ interface `GENERIC_ROM_BFM_NAME #(
     	int unsigned 		data);
     	if (offset[OFFSET_HIGH_BIT:2] < (2**ADDRESS_WIDTH)-1) begin
 	    	rom[offset[OFFSET_HIGH_BIT:2]] = data;
+	    	init[offset[OFFSET_HIGH_BIT:2]] = 1;
     	end else begin
 	    	$display("Error: rom(32)[%0d] = 'h%08h", offset[(ADDRESS_WIDTH-1):2], data);
     	end
@@ -95,6 +106,11 @@ interface `GENERIC_ROM_BFM_NAME #(
 //		read_addr <= i_address;
 //		read_data <= rom[read_addr];
 		read_data <= rom[i_address];
+		
+		if (report_uninit && init[i_address] == 0) begin
+			$display("%m: Address 'h%08h uninitialized @ %t", 
+					(i_address << OFFSET_LOW_BIT), $time);
+		end
 	end
 
 	assign o_read_data = read_data;

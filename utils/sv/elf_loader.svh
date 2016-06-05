@@ -98,7 +98,9 @@ class elf_loader;
 
 	uvm_component					m_comp;
 	sv_bfms_rw_api_if				m_mem_if;
-	bit								m_big_endian = 1;
+	bit								m_big_endian    = 1;
+	bit								m_load_ram      = 0;
+	bit								m_do_fill		= 0;
 	
 	function new(
 		uvm_component 					c,
@@ -229,7 +231,7 @@ class elf_loader;
 		ElfHeader hdr;
 		Elf32_Phdr phdr;
 		Elf32_Shdr shdr;
-		int fd = $fopen(filename, "r");
+		int fd = $fopen(filename, "rb");
 		
 		if (fd == -1) begin
 			m_comp.uvm_report_fatal(ID, 
@@ -254,74 +256,143 @@ class elf_loader;
 //			return;
 //		end
 		
-		/*
 		for (int i=0; i<hdr.e_phnum; i++) begin
 			phdr = read_phdr(fd, hdr.e_phoff+hdr.e_phentsize*i);
+				m_comp.uvm_report_info(ID, 
+					$psprintf("Loading %0d bytes @ 'h%08h..'h%08h (vaddr='h%08h)",
+						phdr.p_filesz, phdr.p_paddr, (phdr.p_paddr+phdr.p_filesz),
+						phdr.p_vaddr), 
+					UVM_MEDIUM);			
+			
+			load_phdr(fd, phdr);
 		end
+		/*
 		 */
 
 		for (int i=0; i<hdr.e_shnum; i++) begin
 			shdr = read_shdr(fd, hdr.e_shoff + hdr.e_shentsize*i);
-			
-			if (shdr.sh_type == SHT_PROGBITS && shdr.sh_size != 0 &&
-				(shdr.sh_flags & SHF_ALLOC) != 0) begin
-				// read in data
-				bit [7:0] tmp[] = new[shdr.sh_size];
-				bit [7:0] tmp_b;
-				bit [31:0] data;
-				m_comp.uvm_report_info(ID, 
-					$psprintf("Loading %0d bytes @ 'h%08h..'h%08h",
-						shdr.sh_size, shdr.sh_addr, (shdr.sh_addr+shdr.sh_size)), 
-					UVM_MEDIUM);
-			
-				void'($fseek(fd, shdr.sh_offset, 0));
-
-				for (int j=0; j<shdr.sh_size; j++) begin
-					void'($fread(tmp_b, fd));
-					tmp[j] = tmp_b;
-				end
-				
-				// Copy data to memory
-				for (int j=0; j<shdr.sh_size; j+=4) begin
-					if (m_big_endian) begin
-						data[7:0]   = tmp[j];
-						data[15:8]  = tmp[j+1];
-						data[23:16] = tmp[j+2];
-						data[31:24] = tmp[j+3];
-					end else begin
-						data[7:0]   = tmp[j+3];
-						data[15:8]  = tmp[j+2];
-						data[23:16] = tmp[j+1];
-						data[31:24] = tmp[j+0];
-					end
-				
-					m_mem_if.write32(shdr.sh_addr+j, data);
-//					$display("write32 'h%08h 'h%08h", shdr.sh_addr+j, data);
-					if (j+4 >= shdr.sh_size) begin
-						m_comp.uvm_report_info(ID, 
-							$psprintf("Load last addr='h%08h", shdr.sh_addr+j), UVM_MEDIUM);
-					end
-				end
-			end
+		
+//			if (shdr.sh_type == SHT_PROGBITS && shdr.sh_size != 0 &&
+//				(shdr.sh_flags & SHF_ALLOC) != 0) begin
+//				if (m_load_ram || (shdr.sh_flags & SHF_WRITE) == 0) begin
+//
+//					m_comp.uvm_report_info(ID, 
+//							$psprintf("Loading %0d bytes @ 'h%08h..'h%08h",
+//								shdr.sh_size, shdr.sh_addr, (shdr.sh_addr+shdr.sh_size)), 
+//							UVM_MEDIUM);
+//					load_section(fd, shdr);
+//				end else begin
+//					m_comp.uvm_report_info(ID, 
+//							$psprintf("[Skip] Loading %0d bytes @ 'h%08h..'h%08h",
+//								shdr.sh_size, shdr.sh_addr, (shdr.sh_addr+shdr.sh_size)), 
+//							UVM_MEDIUM);
+//				end
+//			end
 	
 			if (shdr.sh_type == SHT_NOBITS && shdr.sh_size != 0) begin
-				m_comp.uvm_report_info(ID, 
-					$psprintf("Fill %0d bytes @ 'h%08h..'h%08h",
-						shdr.sh_size, shdr.sh_addr, (shdr.sh_addr+shdr.sh_size)),
-					UVM_MEDIUM);
-				for (int j=0; j<shdr.sh_size; j+=4) begin
-					m_mem_if.write32(shdr.sh_addr+j, 0);
+				if (m_do_fill) begin
+					m_comp.uvm_report_info(ID, 
+							$psprintf("Fill %0d bytes @ 'h%08h..'h%08h",
+								shdr.sh_size, shdr.sh_addr, (shdr.sh_addr+shdr.sh_size)),
+							UVM_MEDIUM);
+					for (int j=0; j<shdr.sh_size; j+=4) begin
+						m_mem_if.write32(shdr.sh_addr+j, 0);
 					
-					if (j+4 >= shdr.sh_size) begin
-						m_comp.uvm_report_info(ID, 
-							$psprintf("Fill last addr='h%08h", shdr.sh_addr+j), UVM_MEDIUM);
+						if (j+4 >= shdr.sh_size) begin
+							m_comp.uvm_report_info(ID, 
+									$psprintf("Fill last addr='h%08h", shdr.sh_addr+j), UVM_MEDIUM);
+						end
 					end
+				end else begin
+					m_comp.uvm_report_info(ID, 
+							$psprintf("[Skip] Fill %0d bytes @ 'h%08h..'h%08h",
+								shdr.sh_size, shdr.sh_addr, (shdr.sh_addr+shdr.sh_size)),
+							UVM_MEDIUM);
 				end
 			end
 		end
 
 		$fclose(fd);
 	endtask
-	
+		
+	task load_section(int fd, Elf32_Shdr shdr);
+		// read in data
+		bit [7:0] tmp[4]; // new[shdr.sh_size];
+		bit [7:0] tmp_b;
+		bit [31:0] data;
+		int off = 0, ret;	
+		void'($fseek(fd, shdr.sh_offset, 0));
+			
+		for (int off=0; off<shdr.sh_size; off+=4) begin
+			for (int j=0; j<4; j++) begin
+				ret = $fread(tmp_b, fd);
+				if (ret <= 0) begin
+					m_comp.uvm_report_fatal(ID,
+							$psprintf("Read error %0d @ %0d %0d",
+								ret, shdr.sh_offset+off, $ftell(fd)));
+				end
+				tmp[j] = tmp_b;
+			end
+
+			// Copy data to memory
+			if (m_big_endian) begin
+				data[7:0]   = tmp[0];
+				data[15:8]  = tmp[1];
+				data[23:16] = tmp[2];
+				data[31:24] = tmp[3];
+			end else begin
+				data[7:0]   = tmp[3];
+				data[15:8]  = tmp[2];
+				data[23:16] = tmp[1];
+				data[31:24] = tmp[0];
+			end
+
+			m_mem_if.write32(shdr.sh_addr+off, data);
+			if (off+4 >= shdr.sh_size) begin
+				m_comp.uvm_report_info(ID, 
+						$psprintf("Load last addr='h%08h", shdr.sh_addr+off), UVM_MEDIUM);
+			end	
+		end
+	endtask
+
+	task load_phdr(int fd, Elf32_Phdr phdr);
+		// read in data
+		bit [7:0] tmp[4]; // new[shdr.sh_size];
+		bit [7:0] tmp_b;
+		bit [31:0] data;
+		int off = 0, ret;	
+		void'($fseek(fd, phdr.p_offset, 0));
+			
+		for (int off=0; off<phdr.p_filesz; off+=4) begin
+			for (int j=0; j<4; j++) begin
+				ret = $fread(tmp_b, fd);
+				if (ret <= 0) begin
+					m_comp.uvm_report_fatal(ID,
+							$psprintf("Read error %0d @ %0d %0d",
+								ret, phdr.p_offset+off, $ftell(fd)));
+				end
+				tmp[j] = tmp_b;
+			end
+
+			// Copy data to memory
+			if (m_big_endian) begin
+				data[7:0]   = tmp[0];
+				data[15:8]  = tmp[1];
+				data[23:16] = tmp[2];
+				data[31:24] = tmp[3];
+			end else begin
+				data[7:0]   = tmp[3];
+				data[15:8]  = tmp[2];
+				data[23:16] = tmp[1];
+				data[31:24] = tmp[0];
+			end
+
+			m_mem_if.write32(phdr.p_paddr+off, data);
+			if (off+4 >= phdr.p_filesz) begin
+				m_comp.uvm_report_info(ID, 
+						$psprintf("Load last addr='h%08h", phdr.p_paddr+off), UVM_MEDIUM);
+			end	
+		end
+	endtask
 	
 endclass

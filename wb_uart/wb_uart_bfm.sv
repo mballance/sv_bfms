@@ -54,8 +54,8 @@ interface `WB_UART_BFM_NAME (
 		if (req && s.WE) begin
 			if (s.ADR[3:2] == 0) begin
 				if (agent == null) begin
-					uvm_config_db #(wb_uart_agent)::get(uvm_top, $psprintf("%m"),
-							wb_uart_config::report_id, agent);
+					void'(uvm_config_db #(wb_uart_agent)::get(uvm_top, $psprintf("%m"),
+							wb_uart_config::report_id, agent));
 				end
 				
 				if (agent != null) begin
