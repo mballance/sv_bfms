@@ -64,8 +64,6 @@ localparam OFFSET_LOW_BIT = ($clog2(DATA_WIDTH/8));
 localparam report_uninit = 0;
 
 initial begin
-	$display("generic_sram_byte_en_bfm %m: DATA_WIDTH=%0d ADDRESS_WIDTH=%0d OFFSET_HIGH=%0d OFFSET_LOW=%0d",
-			DATA_WIDTH, ADDRESS_WIDTH, OFFSET_HIGH_BIT, OFFSET_LOW_BIT);
 	for (i=0; i<(2**ADDRESS_WIDTH); i++) begin
 		init[i] = 0;
 	end
@@ -87,8 +85,6 @@ always @(posedge i_clk) begin
             mem[i_address][i*8+6] <= i_byte_enable[i] ? i_write_data[i*8+6] : mem[i_address][i*8+6] ;
             mem[i_address][i*8+7] <= i_byte_enable[i] ? i_write_data[i*8+7] : mem[i_address][i*8+7] ;
         end            
-//    	$display("%t %m write: address='h%08h data='h%08h byte_enable='h%02h memory='h%08h",
-//    			$time, int'(i_address) << 2, i_write_data, i_byte_enable, mem[i_address]);
 		init[i_address] = 1;
     end else begin
     	if (report_uninit && init[i_address] == 0 && i_address != 0) begin
