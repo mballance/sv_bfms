@@ -7,6 +7,7 @@
 
 package wb_uart_agent_pkg;
 	import uvm_pkg::*;
+	import sv_bfms_api_pkg::*;
 	
 	`include "wb_uart_config.svh"
 	`include "wb_uart_seq_item.svh"

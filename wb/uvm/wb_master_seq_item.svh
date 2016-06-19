@@ -1,6 +1,7 @@
 
-class wb_master_seq_item extends uvm_sequence_item;
-	`uvm_object_utils(wb_master_seq_item)
+class wb_master_seq_item `wb_master_plist extends uvm_sequence_item;
+	typedef wb_master_seq_item `wb_master_params this_t;
+	`uvm_object_param_utils(this_t)
 	
 	const string report_id = "wb_master_seq_item";
 	

@@ -9,6 +9,7 @@
  */
 package sv_bfms_api_pkg;
 	`include "sv_bfms_rw_api_if.svh"
+	`include "sv_bfms_rw_api_dpi.svh"
 
 endpackage
 

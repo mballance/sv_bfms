@@ -1,9 +1,15 @@
 
 `include "uvm_macros.svh"
 
+`define wb_master_plist  #(parameter int ADDRESS_WIDTH=32, parameter int DATA_WIDTH=32)
+`define wb_master_params #(ADDRESS_WIDTH, DATA_WIDTH)
+`define wb_master_vif_t virtual wb_master_bfm `wb_master_params
+
 package wb_master_agent_pkg;
 	import uvm_pkg::*;
-	
+	import sv_bfms_api_pkg::*;
+
+	`include "wb_master_rw_api.svh"
 	`include "wb_master_config.svh"
 	`include "wb_master_seq_item.svh"
 	`include "wb_master_driver.svh"

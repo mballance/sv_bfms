@@ -17,6 +17,7 @@ interface wb_master_bfm #(
 		);
 
 	reg							reset = 0;
+	reg							reset_done = 0;
 	
 	reg[WB_ADDR_WIDTH-1:0]		write_data_buf;
 	reg[WB_ADDR_WIDTH-1:0]		read_data_buf;
@@ -62,7 +63,10 @@ interface wb_master_bfm #(
 			reset <= 1;
 		end else begin
 			if (reset == 1) begin
+`ifdef BFM_NONBLOCK
 				wb_master_bfm_reset();
+`endif
+				reset_done <= 1;
 				reset <= 0;
 			end
 			case (state)
@@ -93,7 +97,7 @@ interface wb_master_bfm #(
 						ack = 1;
 `endif
 						if (!WE_r) begin
-							read_data_buf <= master.DAT_R;
+							read_data_buf = master.DAT_R;
 						end
 						
 						STB_rs <= 0;
@@ -144,6 +148,12 @@ interface wb_master_bfm #(
 		byte unsigned				BTE,
 		int unsigned				SEL,
 		byte unsigned				WE);
+`ifndef BFM_NONBLOCK
+		// Wait for reset
+		while (reset_done == 0) begin
+			@(posedge clk);
+		end
+`endif
 		ADR_r = ADR;
 		CTI_r = CTI;
 		BTE_r = BTE;
