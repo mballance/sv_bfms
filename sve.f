@@ -13,3 +13,6 @@
 
 -f ${SV_BFMS}/wb_uart/uvm/uvm.f
 -f ${SV_BFMS}/wb_uart/wb_uart.f
+
+-F ${SV_BFMS}/irq/uvm/sve.F
+${SV_BFMS}/irq/irq_bfm.sv
