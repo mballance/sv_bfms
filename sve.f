@@ -8,6 +8,9 @@
 -f ${SV_BFMS}/generic_sram_byte_en/uvm/uvm.f
 -f ${SV_BFMS}/generic_sram_byte_en/sv.f
 
+-f ${SV_BFMS}/uart/uvm/uvm.f
+-f ${SV_BFMS}/uart/sv.f
+
 -f ${SV_BFMS}/wb/wb.f
 -f ${SV_BFMS}/wb/uvm/uvm.f
 

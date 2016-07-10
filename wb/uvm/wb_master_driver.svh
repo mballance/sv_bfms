@@ -13,6 +13,7 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 	
 	cfg_t													m_cfg;
 	semaphore												m_sem = new(1);
+	bit														m_big_endian = 1;
 	
 	function new(string name, uvm_component parent=null);
 		super.new(name, parent);
@@ -52,9 +53,27 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 		// TODO: deal with select
 		// TODO: deal with data swizzling
 		cfg_t::vif_t vif = m_cfg.vif;
+		bit[3:0] mask;
+		bit[31:0] data_tmp;
+		
+		if (m_big_endian) begin
+			mask = (1 << (3-(addr & 3)));
+		end else begin
+			mask = (1 << (addr & 3));
+		end
+		
+//		$display("read8: addr='h%08h mask='h%08h", addr, mask);
 		m_sem.get(1);
-		vif.wb_master_bfm_request(addr, 1, 1, 'hf, 0);
-		vif.wb_master_bfm_get_data(0, data);
+		vif.wb_master_bfm_request(addr, 1, 1, mask, 0);
+		vif.wb_master_bfm_get_data(0, data_tmp);
+//		$display("read8:   raw data='h%08h", data_tmp);
+		if (m_big_endian) begin
+			data_tmp >>= 8*(3-(addr & 3));
+		end else begin
+			data_tmp >>= 8*(addr & 3);
+		end
+//		$display("read8:   real data='h%08h", data_tmp);
+		data = data_tmp;
 		m_sem.put(1);
 	endtask
 
@@ -78,11 +97,24 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 	 */
 	virtual task write8(input bit[31:0] addr, input bit[7:0] data);
 		cfg_t::vif_t vif = m_cfg.vif;
-		// TODO: deal with select
-		// TODO: deal with data swizzling
+		bit[3:0] mask;
+		bit[31:0] data_tmp;
+		
+		data_tmp = data;
+		if (m_big_endian) begin
+			mask = (1 << (3-(addr & 3)));
+			data_tmp <<= 8*(3-(addr & 3));
+		end else begin
+			mask = (1 << (addr & 3));
+			data_tmp <<= 8*(addr & 3);
+		end
+		
+//		$display("write8: addr='h%08h data='h%08h data_tmp='h%08h mask=%08h",
+//				addr, data, data_tmp, mask);
+
 		m_sem.get(1);
-		vif.wb_master_bfm_set_data(0, data);		
-		vif.wb_master_bfm_request(addr, 1, 1, 'hf, 0);
+		vif.wb_master_bfm_set_data(0, data_tmp);
+		vif.wb_master_bfm_request(addr, 1, 1, mask, 1);
 		m_sem.put(1);
 	endtask
 

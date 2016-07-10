@@ -3,8 +3,8 @@ ifneq (1,$(RULES))
 
 SV_BFMS_API_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 
-CFLAGS += -I$(SV_BFMS_API_DIR)/c
-CXXFLAGS += -I$(SV_BFMS_API_DIR)/c
+CFLAGS += -I$(SV_BFMS_API_DIR)/c -I$(SV_BFMS_API_DIR)/../utils/c
+CXXFLAGS += -I$(SV_BFMS_API_DIR)/c -I$(SV_BFMS_API_DIR)/../utils/c
 
 SV_BFMS_API_SRC = \
   sv_bfms_rw_api_if.c

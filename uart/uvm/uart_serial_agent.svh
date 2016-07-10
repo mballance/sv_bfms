@@ -1,45 +1,48 @@
 
 
 /**
- * Class: wb_uart_agent
+ * Class: uart_serial_agent
  */
-class wb_uart_agent extends uvm_agent;
+class uart_serial_agent `uart_serial_plist extends uvm_agent;
+	
+	typedef uart_serial_agent  `uart_serial_params this_t;
+	`uvm_component_param_utils (this_t)
 
-	`uvm_component_utils(wb_uart_agent)
 
-	const string report_id = "wb_uart_agent";
+	const string report_id = "uart_serial_agent";
+	
+	typedef uart_serial_driver `uart_serial_params 	drv_t;
+	typedef uart_serial_config `uart_serial_params 	cfg_t;
+	typedef uart_serial_monitor `uart_serial_params	mon_t;
 
-	wb_uart_driver								m_driver;
-	uvm_sequencer #(wb_uart_seq_item)			m_seqr;
-	wb_uart_monitor								m_monitor;
+	drv_t													m_driver;
+	uvm_sequencer #(uart_serial_seq_item)			m_seqr;
+	mon_t													m_monitor;
 	
-	uvm_analysis_port #(wb_uart_seq_item)		m_mon_out_ap;
-	uvm_analysis_port #(wb_uart_seq_item)		m_drv_out_ap;
+	uvm_analysis_port #(uart_serial_seq_item)		m_mon_out_ap;
+	uvm_analysis_port #(uart_serial_seq_item)		m_drv_out_ap;
 	
-	wb_uart_config								m_cfg;
+	cfg_t													m_cfg;
 	
-	wb_uart_seq_item							m_recv_item;
-	
-	string										m_buffer;
-	
+	uart_serial_seq_item							m_recv_item;
 	
 	function new(string name, uvm_component parent=null);
 		super.new(name, parent);
-		
-		m_recv_item = wb_uart_seq_item::type_id::create("m_recv_item");
 	endfunction
 	
 	function void build_phase(uvm_phase phase);
 		super.build_phase(phase);
+		
+		m_recv_item = uart_serial_seq_item::type_id::create("m_recv_item");
 	
 		// Obtain the config object for this agent
-		m_cfg = wb_uart_config::get_config(this);
+		m_cfg = cfg_t::get_config(this);
 	
-		uvm_config_db #(wb_uart_agent)::set(uvm_top, m_cfg.vif_path,
-				wb_uart_config::report_id, this);
+		uvm_config_db #(uart_serial_agent)::set(uvm_top, m_cfg.vif_path,
+				uart_serial_config::report_id, this);
 		
 		if (m_cfg.has_driver) begin
-			m_driver = wb_uart_driver::type_id::create("m_driver", this);
+			m_driver = drv_t::type_id::create("m_driver", this);
 			
 			// Create driver analysis port
 			m_drv_out_ap = new("m_drv_out_ap", this);
@@ -50,7 +53,7 @@ class wb_uart_agent extends uvm_agent;
 		end
 	
 		if (m_cfg.has_monitor) begin
-			m_monitor = wb_uart_monitor::type_id::create("m_monitor", this);
+			m_monitor = mon_t::type_id::create("m_monitor", this);
 			
 			// Create the monitor analysis port
 			m_mon_out_ap = new("m_mon_out_ap", this);
@@ -77,9 +80,8 @@ class wb_uart_agent extends uvm_agent;
 		
 	endfunction
 	
-	task recv(bit[7:0]	data);
-		$display("recv: %0d", data);
-		m_recv_item.m_data = data;
+	task recv(bit[7:0] data);
+		m_recv_item.data = data;
 		m_mon_out_ap.write(m_recv_item);
 	endtask
 

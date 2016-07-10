@@ -13,6 +13,10 @@ void sv_bfms_write32(void *hndl, uint32_t addr, uint32_t data);
 
 uint32_t sv_bfms_read32(void *hndl, uint32_t addr);
 
+void sv_bfms_write8(void *hndl, uint32_t addr, uint8_t data);
+
+uint8_t sv_bfms_read8(void *hndl, uint32_t addr);
+
 
 #ifdef __cplusplus
 }
