@@ -1,21 +1,15 @@
 /****************************************************************************
  * wb_master_bfm.sv
  ****************************************************************************/
-
-/**
- * Module: wb_master_bfm
- * 
- * TODO: Add module documentation
- */
-interface wb_master_bfm #(
-		parameter int			WB_ADDR_WIDTH = 32,
-		parameter int			WB_DATA_WIDTH = 32
+ 
+interface wb_master_bfm_core #(
+		parameter int WB_ADDR_WIDTH=32, 
+		parameter int WB_DATA_WIDTH=32
 		) (
-		input					clk,
-		input					rstn,
-		wb_if.master			master
+		input						clk,
+		input						rstn
 		);
-
+	
 	reg							reset = 0;
 	reg							reset_done = 0;
 	
@@ -24,36 +18,29 @@ interface wb_master_bfm #(
 	reg							req = 0;
 	reg							ack = 0;
 	
-	reg[WB_ADDR_WIDTH-1:0]		ADR_r;
-	reg[WB_ADDR_WIDTH-1:0]		ADR_rs;
-	reg[2:0]					CTI_r;
-	reg[2:0]					CTI_rs;
-	reg[1:0]					BTE_r;
-	reg[1:0]					BTE_rs;
-	reg[WB_DATA_WIDTH-1:0]		DAT_W_rs;
-	reg							CYC_rs;
-	reg[(WB_DATA_WIDTH/8)-1:0]	SEL_r;	
-	reg[(WB_DATA_WIDTH/8)-1:0]	SEL_rs;	
-	reg							STB_rs;
-	reg							WE_r;
-	reg							WE_rs;
+	reg[WB_ADDR_WIDTH-1:0]		ADR_r = 0;
+	reg[WB_ADDR_WIDTH-1:0]		ADR_rs = 0;
+	reg[2:0]					CTI_r = 0;
+	reg[2:0]					CTI_rs = 0;
+	reg[1:0]					BTE_r = 0;
+	reg[1:0]					BTE_rs = 0;
+	reg[WB_DATA_WIDTH-1:0]		DAT_W_rs = 0;
+	reg							CYC_rs = 0;
+	reg[(WB_DATA_WIDTH/8)-1:0]	SEL_r = 0;	
+	reg[(WB_DATA_WIDTH/8)-1:0]	SEL_rs = 0;	
+	reg							STB_rs = 0;
+	reg							WE_r = 0;
+	reg							WE_rs = 0;
 
-	assign master.ADR = ADR_rs;
-	assign master.CTI = CTI_rs;
-	assign master.BTE = BTE_rs;
-	assign master.DAT_W = DAT_W_rs;
-	assign master.CYC = CYC_rs;
-	assign master.SEL = SEL_rs;
-	assign master.STB = STB_rs;
-	assign master.WE  = WE_rs;
+
 	
 	reg[1:0] state;
 
-`ifdef BFM_NONBLOCK
-	initial begin
-		wb_master_bfm_register();
-	end
-`endif	
+	`ifdef BFM_NONBLOCK
+		initial begin
+			wb_master_bfm_register();
+		end
+	`endif	
 
 	// BFM State machine
 	always @(posedge clk) begin
@@ -63,9 +50,9 @@ interface wb_master_bfm #(
 			reset <= 1;
 		end else begin
 			if (reset == 1) begin
-`ifdef BFM_NONBLOCK
-				wb_master_bfm_reset();
-`endif
+				`ifdef BFM_NONBLOCK
+					wb_master_bfm_reset();
+				`endif
 				reset_done <= 1;
 				reset <= 0;
 			end
@@ -91,11 +78,11 @@ interface wb_master_bfm #(
 				
 				1: begin
 					if (master.ACK) begin
-`ifdef BFM_NONBLOCK						
-						wb_master_bfm_acknowledge(master.ERR);
-`else
-						ack = 1;
-`endif
+						`ifdef BFM_NONBLOCK						
+							wb_master_bfm_acknowledge(master.ERR);
+						`else
+							ack = 1;
+						`endif
 						if (!WE_r) begin
 							read_data_buf = master.DAT_R;
 						end
@@ -120,27 +107,27 @@ interface wb_master_bfm #(
 		ADDRESS_WIDTH = WB_ADDR_WIDTH;
 		DATA_WIDTH = WB_DATA_WIDTH;
 	endtask
-`ifndef BFM_NONBLOCK
-	export "DPI-C" task wb_master_bfm_get_parameters;
-`endif	
+	`ifndef BFM_NONBLOCK
+		export "DPI-C" task wb_master_bfm_get_parameters;
+	`endif	
 	
 	task wb_master_bfm_set_data(
 		int unsigned				idx,
 		int unsigned				data);
 		write_data_buf = data;
 	endtask
-`ifndef BFM_NONBLOCK
-	export "DPI-C" task wb_master_bfm_set_data;
-`endif
+	`ifndef BFM_NONBLOCK
+		export "DPI-C" task wb_master_bfm_set_data;
+	`endif
 	
 	task wb_master_bfm_get_data(
 		input int unsigned				idx,
 		output int unsigned				data);
 		data = read_data_buf;
 	endtask
-`ifndef BFM_NONBLOCK
-	export "DPI-C" task wb_master_bfm_get_data;
-`endif	
+	`ifndef BFM_NONBLOCK
+		export "DPI-C" task wb_master_bfm_get_data;
+	`endif	
 	
 	task wb_master_bfm_request(
 		longint unsigned 			ADR,
@@ -148,12 +135,12 @@ interface wb_master_bfm #(
 		byte unsigned				BTE,
 		int unsigned				SEL,
 		byte unsigned				WE);
-`ifndef BFM_NONBLOCK
-		// Wait for reset
-		while (reset_done == 0) begin
-			@(posedge clk);
-		end
-`endif
+		`ifndef BFM_NONBLOCK
+			// Wait for reset
+			while (reset_done == 0) begin
+				@(posedge clk);
+			end
+		`endif
 		ADR_r = ADR;
 		CTI_r = CTI;
 		BTE_r = BTE;
@@ -161,30 +148,62 @@ interface wb_master_bfm #(
 		WE_r = WE;
 		req = 1;
 		// non-SC BFM version blocks waiting for completion
-`ifndef BFM_NONBLOCK
-		ack = 0; // TODO: should check?
-		do begin
-			@(posedge clk);
-		end while (ack == 0);
-		ack = 0;
-`endif
+		`ifndef BFM_NONBLOCK
+			ack = 0; // TODO: should check?
+			do begin
+				@(posedge clk);
+			end while (ack == 0);
+			ack = 0;
+		`endif
 	endtask
-`ifndef BFM_NONBLOCK
-	export "DPI-C" task wb_master_bfm_request;
-`endif	
+	`ifndef BFM_NONBLOCK
+		export "DPI-C" task wb_master_bfm_request;
+	`endif	
 
-`ifdef BFM_NONBLOCK
-	import "DPI-C" context task wb_master_bfm_acknowledge(
-			byte unsigned			ERR
+	`ifdef BFM_NONBLOCK
+		import "DPI-C" context task wb_master_bfm_acknowledge(
+				byte unsigned			ERR
+			);
+	
+		import "DPI-C" context task wb_master_bfm_reset();
+	
+
+		import "DPI-C" context task wb_master_bfm_register();
+	`else
+	
+	`endif
+endinterface
+
+/**
+ * Module: wb_master_bfm
+ * 
+ * TODO: Add module documentation
+ */
+interface wb_master_bfm #(
+		parameter int			WB_ADDR_WIDTH = 32,
+		parameter int			WB_DATA_WIDTH = 32
+		) (
+		input					clk,
+		input					rstn,
+		wb_if.master			master
 		);
-	
-	import "DPI-C" context task wb_master_bfm_reset();
-	
 
-    import "DPI-C" context task wb_master_bfm_register();
-`else
+	wb_master_bfm_core #(
+		.WB_ADDR_WIDTH  (WB_ADDR_WIDTH ), 
+		.WB_DATA_WIDTH  (WB_DATA_WIDTH )
+		) u_core (
+			.clk(clk),
+			.rstn(rstn));
 	
-`endif
+	assign master.ADR = u_core.ADR_rs;
+	assign master.CTI = u_core.CTI_rs;
+	assign master.BTE = u_core.BTE_rs;
+	assign master.DAT_W = u_core.DAT_W_rs;
+	assign master.CYC = u_core.CYC_rs;
+	assign master.SEL = u_core.SEL_rs;
+	assign master.STB = u_core.STB_rs;
+	assign master.WE  = u_core.WE_rs;	
+	
 
 endinterface
 
