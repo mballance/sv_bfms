@@ -3,6 +3,12 @@ class wb_master_seq_item `wb_master_plist extends uvm_sequence_item;
 	typedef wb_master_seq_item `wb_master_params this_t;
 	`uvm_object_param_utils(this_t)
 	
+	rand bit[ADDRESS_WIDTH-1:0]			addr;
+	rand bit[DATA_WIDTH-1:0]			data;
+	rand bit							is_write;
+	rand bit[3:0]						size; // 1, 2, 4
+	rand bit[(DATA_WIDTH/8)-1:0]		byte_en;
+	
 	const string report_id = "wb_master_seq_item";
 	
 	// TODO: Declare fields here

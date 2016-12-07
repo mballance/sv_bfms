@@ -13,24 +13,25 @@ interface wb_master_bfm_core #(
 	reg							reset = 0;
 	reg							reset_done = 0;
 	
-	reg[WB_ADDR_WIDTH-1:0]		write_data_buf;
-	reg[WB_ADDR_WIDTH-1:0]		read_data_buf;
+	reg[WB_DATA_WIDTH-1:0]		write_data_buf;
+	reg[WB_DATA_WIDTH-1:0]		read_data_buf;
 	reg							req = 0;
 	reg							ack = 0;
 	
-	reg[WB_ADDR_WIDTH-1:0]		ADR_r = 0;
-	reg[WB_ADDR_WIDTH-1:0]		ADR_rs = 0;
-	reg[2:0]					CTI_r = 0;
-	reg[2:0]					CTI_rs = 0;
-	reg[1:0]					BTE_r = 0;
-	reg[1:0]					BTE_rs = 0;
-	reg[WB_DATA_WIDTH-1:0]		DAT_W_rs = 0;
-	reg							CYC_rs = 0;
-	reg[(WB_DATA_WIDTH/8)-1:0]	SEL_r = 0;	
-	reg[(WB_DATA_WIDTH/8)-1:0]	SEL_rs = 0;	
-	reg							STB_rs = 0;
-	reg							WE_r = 0;
-	reg							WE_rs = 0;
+	reg[WB_ADDR_WIDTH-1:0]		ADR_r;
+	reg[WB_ADDR_WIDTH-1:0]		ADR_rs;
+	reg[2:0]					CTI_r;
+	reg[2:0]					CTI_rs;
+	reg[1:0]					BTE_r;
+	reg[1:0]					BTE_rs;
+	reg[WB_DATA_WIDTH-1:0]		DAT_W_rs;
+	reg							CYC_rs;
+	reg[(WB_DATA_WIDTH/8)-1:0]	SEL_r;
+	reg[(WB_DATA_WIDTH/8)-1:0]	SEL_rs;
+	reg							STB_rs;
+	reg							WE_r;
+	reg							WE_rs;
+	wire[WB_DATA_WIDTH-1:0]		DAT_R;
 
 
 	
@@ -48,11 +49,19 @@ interface wb_master_bfm_core #(
 			state <= 0;
 			req = 0;
 			reset <= 1;
+			ADR_rs <= 0;
+			CTI_rs <= 0;
+			BTE_rs <= 0;
+			DAT_W_rs <= 0;
+			CYC_rs <= 0;
+			SEL_rs <= 0;
+			STB_rs <= 0;
+			WE_rs  <= 0;
 		end else begin
 			if (reset == 1) begin
-				`ifdef BFM_NONBLOCK
-					wb_master_bfm_reset();
-				`endif
+`ifdef BFM_NONBLOCK
+				wb_master_bfm_reset();
+`endif
 				reset_done <= 1;
 				reset <= 0;
 			end
@@ -84,7 +93,7 @@ interface wb_master_bfm_core #(
 							ack = 1;
 						`endif
 						if (!WE_r) begin
-							read_data_buf = master.DAT_R;
+							read_data_buf = DAT_R;
 						end
 						
 						STB_rs <= 0;
@@ -135,12 +144,12 @@ interface wb_master_bfm_core #(
 		byte unsigned				BTE,
 		int unsigned				SEL,
 		byte unsigned				WE);
-		`ifndef BFM_NONBLOCK
+`ifndef BFM_NONBLOCK
 			// Wait for reset
 			while (reset_done == 0) begin
 				@(posedge clk);
 			end
-		`endif
+`endif
 		ADR_r = ADR;
 		CTI_r = CTI;
 		BTE_r = BTE;
@@ -148,15 +157,15 @@ interface wb_master_bfm_core #(
 		WE_r = WE;
 		req = 1;
 		// non-SC BFM version blocks waiting for completion
-		`ifndef BFM_NONBLOCK
+`ifndef BFM_NONBLOCK
 			ack = 0; // TODO: should check?
 			do begin
 				@(posedge clk);
 			end while (ack == 0);
 			ack = 0;
-		`endif
+`endif
 	endtask
-	`ifndef BFM_NONBLOCK
+	`ifdef BFM_NONBLOCK
 		export "DPI-C" task wb_master_bfm_request;
 	`endif	
 
@@ -195,10 +204,13 @@ interface wb_master_bfm #(
 			.clk(clk),
 			.rstn(rstn));
 	
+	
 	assign master.ADR = u_core.ADR_rs;
+//	assign master.ADR = 'h28; // u_core.ADR_rs;
 	assign master.CTI = u_core.CTI_rs;
 	assign master.BTE = u_core.BTE_rs;
 	assign master.DAT_W = u_core.DAT_W_rs;
+	assign u_core.DAT_R = master.DAT_R;
 	assign master.CYC = u_core.CYC_rs;
 	assign master.SEL = u_core.SEL_rs;
 	assign master.STB = u_core.STB_rs;

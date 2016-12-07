@@ -120,11 +120,69 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 
 	task run_phase(uvm_phase phase);
 		wb_master_seq_item		item;
+		bit[3:0] mask;
+		bit[31:0] data_tmp;
+		bit[31:0] addr;
 		
 		forever begin
+			cfg_t::vif_t vif = m_cfg.vif;
+			
 			seq_item_port.get_next_item(item);
 			// TODO: execute the sequence item
 			item.print();
+		
+			data_tmp = item.data;
+			addr = item.addr;
+			m_sem.get(1);
+			
+			case (item.size)
+				1: begin
+					if (m_big_endian) begin
+						mask = (1 << (3-(addr & 3)));
+						data_tmp <<= 8*(3-(addr & 3));
+					end else begin
+						mask = (1 << (addr & 3));
+						data_tmp <<= 8*(addr & 3);
+					end					
+				end
+				
+				2: begin
+					// TODO:
+				end
+				
+				4: begin
+					mask = 'hf;
+				end
+			endcase
+	
+			$display("WB_DRIVER: 'h%08h 'h%08h is_write=%0d", 
+					addr, data_tmp, item.is_write);
+			
+			vif.wb_master_bfm_set_data(0, data_tmp);
+			vif.wb_master_bfm_request(addr, 1, 1, mask, 
+					item.is_write);
+	
+			if (!item.is_write) begin
+				vif.wb_master_bfm_get_data(0, data_tmp);
+			
+				case (item.size) 
+					1: begin
+						if (m_big_endian) begin
+							data_tmp >>= 8*(3-(addr & 3));
+						end else begin
+							data_tmp >>= 8*(addr & 3);
+						end					
+					end
+				
+					2: begin
+						// TODO:
+					end
+				endcase
+			
+				item.data = data_tmp;
+			end
+			
+			m_sem.put(1);
 			
 			// Send the item to the analysis port
 			ap.write(item);
