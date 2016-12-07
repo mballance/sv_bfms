@@ -128,8 +128,7 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 			cfg_t::vif_t vif = m_cfg.vif;
 			
 			seq_item_port.get_next_item(item);
-			// TODO: execute the sequence item
-			item.print();
+//			item.print();
 		
 			data_tmp = item.data;
 			addr = item.addr;
@@ -155,9 +154,6 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 				end
 			endcase
 	
-			$display("WB_DRIVER: 'h%08h 'h%08h is_write=%0d", 
-					addr, data_tmp, item.is_write);
-			
 			vif.wb_master_bfm_set_data(0, data_tmp);
 			vif.wb_master_bfm_request(addr, 1, 1, mask, 
 					item.is_write);
