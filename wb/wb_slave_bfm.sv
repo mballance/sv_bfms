@@ -52,12 +52,11 @@ interface wb_slave_bfm_core #(
 			end
 			case (state)
 				0: begin
-					ACK_rs <= 0;
 					if (CYC===1 && STB===1) begin
 						req = 1;
-						ADR_rs <= ADR;
-						SEL_rs <= SEL;
-						WE_rs <= WE;
+						ADR_rs = ADR;
+						SEL_rs = SEL;
+						WE_rs = WE;
 						write_data_buf = DAT_W;
 						
 						state <= 1;
@@ -68,9 +67,14 @@ interface wb_slave_bfm_core #(
 				1: begin
 					if (ack == 1) begin
 						ACK_rs <= 1;
-						state <= 0;
+						state <= 2;
 						ack = 0;
 					end
+				end
+				
+				2: begin
+					ACK_rs <= 0;
+					state <= 0;
 				end
 			endcase
 		end
