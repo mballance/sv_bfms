@@ -206,7 +206,6 @@ interface wb_master_bfm #(
 	
 	
 	assign master.ADR = u_core.ADR_rs;
-//	assign master.ADR = 'h28; // u_core.ADR_rs;
 	assign master.CTI = u_core.CTI_rs;
 	assign master.BTE = u_core.BTE_rs;
 	assign master.DAT_W = u_core.DAT_W_rs;
