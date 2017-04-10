@@ -7,7 +7,7 @@
 class generic_rom_config `GENERIC_ROM_AGENT_PLIST extends uvm_object;
 	typedef generic_rom_config `GENERIC_ROM_AGENT_PARAMS this_t;
 	
-	typedef virtual `GENERIC_ROM_BFM_NAME #(ADDRESS_WIDTH, DATA_WIDTH, "") vif_t;
+	typedef virtual `GENERIC_ROM_BFM_NAME #(ADDRESS_WIDTH, DATA_WIDTH) vif_t;
 	
 	`uvm_object_param_utils (this_t)
 	

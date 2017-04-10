@@ -8,6 +8,7 @@
  * TODO: Add package documentation
  */
 package sv_bfms_api_dpi_pkg;
+	import sv_bfms_api_pkg::*;
 	`include "sv_bfms_rw_api_dpi.svh"
 
 endpackage
