@@ -7,7 +7,7 @@
  * 
  * TODO: Add interface documentation
  */
-interface uart_serial_bfm(
+interface uart_serial_bfm (
 		input				clk_i,
 		input				rstn_i,
 		output				stx_pad_o,
@@ -34,6 +34,10 @@ interface uart_serial_bfm(
 	bit       parity_en       = 0;
 	bit [3:0] n_bits          = 8;
 	
+	task set_clkdiv(bit[15:0] div);
+		clk_16x_divisor = div;
+	endtask
+	
 	always @(posedge clk_i) begin
 		if (rstn_i == 0) begin
 			clk_16x_cnt <= 0;
@@ -58,6 +62,7 @@ interface uart_serial_bfm(
 	bit[2:0]  rx_state = 0;
 	bit[3:0]  rx_bit_cnt = 0;
 	bit[7:0]  rx_data;
+	bit       rx_done;
 	bit[7:0]  rx_bits_received = 0;
 	bit       rx_data_sample = 0;
 	
@@ -69,12 +74,13 @@ interface uart_serial_bfm(
 			rx_bit_cnt <= 0;
 			rx_data <= 0;
 			rx_bits_received <= 0;
+			rx_done <= 0;
 		end else begin
 			if (clk_16x) begin
 				case (rx_state)
 					0: begin // Wait for start bit
 						if (srx_pad_i == 0) begin
-//							$display("%t: beginning of start bit", $time);
+							$display("%t: beginning of start bit", $time);
 							rx_clk_cnt <= 0;
 							rx_state <= 1;
 							rx_data <= 0;
@@ -86,7 +92,7 @@ interface uart_serial_bfm(
 							rx_clk_cnt <= 0;
 							rx_bits_received <= 0;
 							rx_state <= 2;
-//							$display("%t: end of start bit", $time);
+							$display("%t: end of start bit", $time);
 						end else begin
 							rx_clk_cnt <= rx_clk_cnt + 1;
 						end
@@ -94,7 +100,7 @@ interface uart_serial_bfm(
 					
 					2: begin // Wait for data mid-bit
 						if (rx_clk_cnt == 7) begin
-//							$display("%t: sample data bit %0d", $time, srx_pad_i);
+							$display("%t: sample data bit %0d", $time, srx_pad_i);
 							// TODO: hard-coded for 8-bit
 							rx_data <= {srx_pad_i, rx_data[7:1]};
 							rx_bits_received <= rx_bits_received + 1;
@@ -113,14 +119,16 @@ interface uart_serial_bfm(
 									// Receive parity bit
 									rx_state <= 4;
 								end else begin
+									$display("Rx Done");
+									rx_done <= 1;
 									// Back to beginning
-									if (agent == null) begin
-										void'(uvm_config_db #(uart_serial_agent)::get(uvm_top,
-													$psprintf("%m"), uart_serial_config::report_id, agent));
-									end
-									if (agent != null) begin
-										agent.recv(rx_data);
-									end
+//									if (agent == null) begin
+//										void'(uvm_config_db #(uart_serial_agent)::get(uvm_top,
+//													$psprintf("%m"), uart_serial_config::report_id, agent));
+//									end
+//									if (agent != null) begin
+//										agent.recv(rx_data);
+//									end
 									rx_state <= 0;
 								end
 							end else begin
@@ -175,7 +183,7 @@ interface uart_serial_bfm(
 	
 	always @(posedge clk_i) begin
 		if (rstn_i == 0) begin
-			tx_start <= 1;
+			tx_start <= 0;
 			tx_done <= 0;
 			stx_pad_r <= 1;
 		end else begin
@@ -241,7 +249,7 @@ interface uart_serial_bfm(
 
 	
 	task do_tx(input byte unsigned data);
-
+		
 		// Ensure we do a reset
 		while (reset_done == 0) begin
 			@(posedge clk_i);
@@ -256,6 +264,21 @@ interface uart_serial_bfm(
 			@(posedge clk_i);
 		end
 		
+	endtask
+	
+	task do_rx(output byte unsigned data);
+		// Ensure we do a reset
+		while (reset_done == 0) begin
+			@(posedge clk_i);
+		end
+		
+		rx_done = 0;
+		while (rx_done == 0) begin
+			@(posedge clk_i);
+		end
+		
+		// Wait for data to be available
+		data = rx_data;
 	endtask
 
 endinterface

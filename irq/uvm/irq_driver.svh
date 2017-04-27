@@ -35,20 +35,9 @@ class irq_driver `irq_plist extends uvm_driver #(irq_seq_item);
 		forever begin
 			m_cfg.vif.irq_bfm_wait_irq();
 			
-			$display("IRQ");
-			
 			ap.write(item);
 			
 			m_cfg.vif.irq_bfm_debounce(m_cfg.debounce_cnt);
-
-//			seq_item_port.get_next_item(item);
-//			// TODO: execute the sequence item
-//			item.print();
-//			
-//			// Send the item to the analysis port
-//			ap.write(item);
-//			
-//			seq_item_port.item_done();
 		end
 	endtask
 endclass

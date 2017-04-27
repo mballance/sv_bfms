@@ -68,7 +68,7 @@ class sv_bfms_rw_api_dpi;
 		int unsigned		addr,
 		int unsigned		data);
 		sv_bfms_rw_api_if api;
-		
+	
 		if (m_map.exists(hndl)) begin
 			api = m_map[hndl];
 		end else begin

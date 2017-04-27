@@ -51,7 +51,8 @@ class uart_serial_agent `uart_serial_plist extends uvm_agent;
 		if (m_cfg.has_sequencer) begin
 			m_seqr = new("m_seqr", this);
 		end
-	
+
+		$display("UART: has_monitor=%0d", m_cfg.has_monitor);
 		if (m_cfg.has_monitor) begin
 			m_monitor = mon_t::type_id::create("m_monitor", this);
 			
@@ -79,6 +80,16 @@ class uart_serial_agent `uart_serial_plist extends uvm_agent;
 		end
 		
 	endfunction
+	
+	task putc(bit[7:0] data);
+		uart_serial_tx_seq seq = uart_serial_tx_seq::type_id::create("seq");
+		seq.data.push_back(data);
+		seq.start(m_seqr);
+	endtask
+	
+	task getc(output bit[7:0] data);
+		m_cfg.vif.do_rx(data);
+	endtask
 	
 	task recv(bit[7:0] data);
 		m_recv_item.data = data;

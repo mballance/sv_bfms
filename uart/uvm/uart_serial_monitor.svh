@@ -33,7 +33,14 @@ class uart_serial_monitor `uart_serial_plist extends uvm_monitor;
 	endfunction
 	
 	task run_phase(uvm_phase phase);
-		// TODO: implement uart_serial_monitor run_phase
+		byte unsigned data;
+		uart_serial_seq_item item = uart_serial_seq_item::type_id::create("item");
+		
+		forever begin
+			m_cfg.vif.do_rx(data);
+			item.data = data;
+			ap.write(item);
+		end
 	endtask
 	
 	
