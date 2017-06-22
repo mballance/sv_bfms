@@ -87,8 +87,11 @@ class uart_serial_agent `uart_serial_plist extends uvm_agent;
 		seq.start(m_seqr);
 	endtask
 	
-	task getc(output bit[7:0] data);
-		m_cfg.vif.do_rx(data);
+	task getc(
+		output bit[7:0] data, 
+		output bit valid, 
+		input int timeout=-1);
+		m_cfg.vif.do_rx(data, valid, timeout);
 	endtask
 	
 	task recv(bit[7:0] data);

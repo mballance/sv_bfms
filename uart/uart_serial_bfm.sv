@@ -80,7 +80,7 @@ interface uart_serial_bfm (
 				case (rx_state)
 					0: begin // Wait for start bit
 						if (srx_pad_i == 0) begin
-							$display("%t: beginning of start bit", $time);
+//							$display("%t: beginning of start bit", $time);
 							rx_clk_cnt <= 0;
 							rx_state <= 1;
 							rx_data <= 0;
@@ -92,7 +92,7 @@ interface uart_serial_bfm (
 							rx_clk_cnt <= 0;
 							rx_bits_received <= 0;
 							rx_state <= 2;
-							$display("%t: end of start bit", $time);
+//							$display("%t: end of start bit", $time);
 						end else begin
 							rx_clk_cnt <= rx_clk_cnt + 1;
 						end
@@ -100,7 +100,7 @@ interface uart_serial_bfm (
 					
 					2: begin // Wait for data mid-bit
 						if (rx_clk_cnt == 7) begin
-							$display("%t: sample data bit %0d", $time, srx_pad_i);
+//							$display("%t: sample data bit %0d", $time, srx_pad_i);
 							// TODO: hard-coded for 8-bit
 							rx_data <= {srx_pad_i, rx_data[7:1]};
 							rx_bits_received <= rx_bits_received + 1;
@@ -119,7 +119,7 @@ interface uart_serial_bfm (
 									// Receive parity bit
 									rx_state <= 4;
 								end else begin
-									$display("Rx Done");
+//									$display("Rx Done");
 									rx_done <= 1;
 									// Back to beginning
 //									if (agent == null) begin
@@ -191,7 +191,7 @@ interface uart_serial_bfm (
 				case (tx_state)
 					0: begin
 						if (tx_start) begin
-							$display("%t: Begin Tx", $time);
+//							$display("%t: Begin Tx", $time);
 							tx_state <= 1;
 							stx_pad_r <= 0;
 							tx_bit_cnt <= 0;
@@ -215,7 +215,7 @@ interface uart_serial_bfm (
 						tx_data >>= 1;
 						tx_state <= 3;
 						tx_bit_cnt <= tx_bit_cnt + 1;
-						$display("%t: Begin Data Bit %0d", $time, tx_bits_transmitted);
+//						$display("%t: Begin Data Bit %0d", $time, tx_bits_transmitted);
 					end
 				
 					// Complete tx data bit
@@ -235,7 +235,7 @@ interface uart_serial_bfm (
 					// Complete stop bit
 					4: begin
 						if (tx_bit_cnt == 15) begin
-							$display("%t: End stop bit", $time);
+//							$display("%t: End stop bit", $time);
 							tx_done <= 1;
 							tx_state <= 0;
 						end
@@ -266,16 +266,25 @@ interface uart_serial_bfm (
 		
 	endtask
 	
-	task do_rx(output byte unsigned data);
+	task automatic do_rx(
+		output byte unsigned 	data, 
+		output byte unsigned 	valid, 
+		input int 				timeout=-1);
+		int count = 0;
 		// Ensure we do a reset
 		while (reset_done == 0) begin
 			@(posedge clk_i);
 		end
 		
-		rx_done = 0;
 		while (rx_done == 0) begin
 			@(posedge clk_i);
+			if (timeout != -1 && ++count > timeout) begin
+				break;
+			end
 		end
+		
+		valid = rx_done;
+		rx_done = 0;
 		
 		// Wait for data to be available
 		data = rx_data;

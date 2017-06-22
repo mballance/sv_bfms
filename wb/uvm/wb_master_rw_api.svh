@@ -37,6 +37,15 @@ class wb_master_rw_api `wb_master_plist extends sv_bfms_rw_api_if;
 	endtask
 
 	/**
+	 * Task: read16
+	 *
+	 * Override from class 
+	 */
+	virtual task read16(input bit[31:0] addr, output bit[15:0] data);
+		m_agent.m_driver.read16(addr, data);
+	endtask
+	
+	/**
 	 * Task: write32
 	 *
 	 * Override from class 
@@ -53,7 +62,15 @@ class wb_master_rw_api `wb_master_plist extends sv_bfms_rw_api_if;
 	virtual task write8(input bit[31:0] addr, input bit[7:0] data);
 		m_agent.m_driver.write8(addr, data);
 	endtask
-	
+
+	/**
+	 * Task: write16
+	 *
+	 * Override from class 
+	 */
+	virtual task write16(input bit[31:0] addr, input bit[15:0] data);
+		m_agent.m_driver.write16(addr, data);
+	endtask	
 
 endclass
 

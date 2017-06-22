@@ -20,6 +20,18 @@
 			output bit[7:0]		data);
 		$display("Error: unimplemented read8 task");
 	endtask
+
+	virtual task write16(
+			bit[31:0]			addr,
+			bit[15:0]			data);
+		$display("Error: unimplemented write8 task");
+	endtask
+	
+	virtual task read16(
+			bit[31:0]			addr,
+			output bit[15:0]	data);
+		$display("Error: unimplemented read8 task");
+	endtask
 	
 	virtual task write32(
 			bit[31:0]			addr,

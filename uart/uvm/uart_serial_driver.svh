@@ -35,7 +35,7 @@ class uart_serial_driver `uart_serial_plist extends uvm_driver #(uart_serial_seq
 		forever begin
 			seq_item_port.get_next_item(item);
 			// TODO: execute the sequence item
-			item.print();
+//			item.print();
 			
 			m_cfg.vif.do_tx(item.data);
 			

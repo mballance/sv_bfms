@@ -78,6 +78,39 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 	endtask
 
 	/**
+	 * Task: read16
+	 *
+	 * Override from class 
+	 */
+	virtual task read16(input bit[31:0] addr, output bit[15:0] data);
+		// TODO: deal with select
+		// TODO: deal with data swizzling
+		cfg_t::vif_t vif = m_cfg.vif;
+		bit[3:0] mask;
+		bit[31:0] data_tmp;
+		
+		if (m_big_endian) begin
+			mask = (3 << (2-(addr & 2)));
+		end else begin
+			mask = (3 << (addr & 2));
+		end
+		
+		$display("read16: addr='h%08h mask='h%08h", addr, mask);
+		m_sem.get(1);
+		vif.wb_master_bfm_request(addr, 1, 1, mask, 0);
+		vif.wb_master_bfm_get_data(0, data_tmp);
+		$display("read16:   raw data='h%08h", data_tmp);
+		if (m_big_endian) begin
+			data_tmp >>= 8*(2-(addr & 2));
+		end else begin
+			data_tmp >>= 8*(addr & 2);
+		end
+		$display("read16:   real data='h%08h", data_tmp);
+		data = data_tmp;
+		m_sem.put(1);
+	endtask
+	
+	/**
 	 * Task: write32
 	 *
 	 * Override from class 
@@ -118,6 +151,34 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 		m_sem.put(1);
 	endtask
 
+	/**
+	 * Task: write16
+	 *
+	 * Override from class 
+	 */
+	virtual task write16(input bit[31:0] addr, input bit[15:0] data);
+		cfg_t::vif_t vif = m_cfg.vif;
+		bit[3:0] mask;
+		bit[31:0] data_tmp;
+		
+		data_tmp = data;
+		if (m_big_endian) begin
+			mask = ('h3 << (2-(addr & 2)));
+			data_tmp <<= 8*(2-(addr & 2));
+		end else begin
+			mask = ('h3 << (addr & 2));
+			data_tmp <<= 8*(addr & 2);
+		end
+		
+		$display("write16: addr='h%08h data='h%08h data_tmp='h%08h mask=%08h",
+						addr, data, data_tmp, mask);
+
+		m_sem.get(1);
+		vif.wb_master_bfm_set_data(0, data_tmp);
+		vif.wb_master_bfm_request(addr, 1, 1, mask, 1);
+		m_sem.put(1);
+	endtask
+	
 	task run_phase(uvm_phase phase);
 		wb_master_seq_item		item;
 		bit[3:0] mask;
