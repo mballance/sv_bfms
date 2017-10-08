@@ -8,7 +8,9 @@ SV_BFMS_DEPS = $(CHISELLIB_JAR) $(STD_PROTOCOL_IF_LIB)
 
 SV_BFMS_SRC := \
 	$(wildcard $(SV_BFMS_SRC_DIR)/sv_bfms/axi4/*.scala) \
-	$(wildcard $(SV_BFMS_SRC_DIR)/sv_bfms/axi4/qvip/*.scala)
+	$(wildcard $(SV_BFMS_SRC_DIR)/sv_bfms/axi4/qvip/*.scala) \
+	$(wildcard $(SV_BFMS_SRC_DIR)/sv_bfms/uart/*.scala) \
+	$(wildcard $(SV_BFMS_SRC_DIR)/sv_bfms/uart/qvip/*.scala) \
 
 else # Rules
 

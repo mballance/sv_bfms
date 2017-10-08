@@ -1,7 +1,6 @@
-package sv_bfms
+package sv_bfms.uart
 
 import chisel3._
-import chisel3.experimental._
 import std_protocol_if.UartIf
 
 class UartSerialBFM extends Module {
