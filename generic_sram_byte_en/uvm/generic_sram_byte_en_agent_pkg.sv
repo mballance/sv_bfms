@@ -8,6 +8,7 @@
 	`define GENERIC_SRAM_BYTE_EN_BFM_NAME generic_sram_byte_en_bfm
 `endif
 
+
 package generic_sram_byte_en_agent_pkg;
 	import uvm_pkg::*;
 	import sv_bfms_api_pkg::*;

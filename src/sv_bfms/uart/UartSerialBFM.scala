@@ -13,6 +13,9 @@ class UartSerialBFM extends Module {
   
   bfm.io.clk_i := clock
   bfm.io.rst_i := reset
+  
+  bfm.io.srx_pad_i := io.s.TxD
+  io.s.RxD := bfm.io.stx_pad_o
 }
 
 class uart_serial_bfm extends BlackBox {

@@ -37,7 +37,7 @@ class uart_serial_monitor `uart_serial_plist extends uvm_monitor;
 		uart_serial_seq_item item = uart_serial_seq_item::type_id::create("item");
 		
 		forever begin
-			m_cfg.vif.do_rx(data, valid);
+			m_cfg.vif.uart_serial_bfm_do_rx(data, valid);
 			item.data = data;
 			ap.write(item);
 		end

@@ -3,7 +3,7 @@
 
 `define uart_serial_plist
 `define uart_serial_params 
-`define uart_serial_vif_t virtual uart_serial_bfm `uart_serial_params
+`define uart_serial_vif_t virtual uart_serial_bfm_core `uart_serial_params
 
 package uart_serial_agent_pkg;
 	import uvm_pkg::*;

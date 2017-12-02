@@ -26,6 +26,27 @@ class uart_serial_agent `uart_serial_plist extends uvm_agent;
 	
 	uart_serial_seq_item							m_recv_item;
 	
+	class recv_monitor extends uvm_subscriber #(uart_serial_seq_item);
+		mailbox #(byte unsigned)		mbox = new();
+		
+		function new(string name, uvm_component parent=null);
+			super.new(name, parent);
+		endfunction
+
+		/**
+		 * Function: write
+		 *
+		 * Override from class 
+		 */
+		function void write(input uart_serial_seq_item t);
+			$display("-- write %0d", t.data);
+			void'(mbox.try_put(t.data));
+		endfunction
+		
+	endclass
+	
+	recv_monitor								m_recv_monitor;
+	
 	function new(string name, uvm_component parent=null);
 		super.new(name, parent);
 	endfunction
@@ -58,7 +79,10 @@ class uart_serial_agent `uart_serial_plist extends uvm_agent;
 			
 			// Create the monitor analysis port
 			m_mon_out_ap = new("m_mon_out_ap", this);
+			
+			m_recv_monitor = new("m_recv_monitor", this);
 		end
+		
 	endfunction
 
 	function void connect_phase(uvm_phase phase);
@@ -72,6 +96,7 @@ class uart_serial_agent `uart_serial_plist extends uvm_agent;
 		if (m_cfg.has_monitor) begin
 			// Connect the monitor to the monitor AP
 			m_monitor.ap.connect(m_mon_out_ap);
+			m_monitor.ap.connect(m_recv_monitor.analysis_export);
 		end
 		
 		if (m_cfg.has_driver) begin
@@ -91,7 +116,14 @@ class uart_serial_agent `uart_serial_plist extends uvm_agent;
 		output bit[7:0] data, 
 		output bit valid, 
 		input int timeout=-1);
-		m_cfg.vif.do_rx(data, valid, timeout);
+		
+		for (int i=0; i<timeout || timeout == -1; i++) begin
+			if (m_recv_monitor.mbox.try_get(data)) begin
+				valid = 1;
+				break;
+			end
+			m_cfg.vif.uart_serial_bfm_wait_for_rx(1);
+		end
 	endtask
 	
 	task recv(bit[7:0] data);
