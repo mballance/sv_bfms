@@ -6,8 +6,8 @@ interface generic_sram_line_en_master_core #(
 		parameter int	NUM_ADDR_BITS=32,
 		parameter int	NUM_DATA_BITS=32
 		) (
-			input									clk,
-			input									rstn
+			input									clock,
+			input									reset
 		);
 	bit 						reset_entry = 0;
 	bit							reset_done = 0;
@@ -25,8 +25,8 @@ interface generic_sram_line_en_master_core #(
 	
 	
 	
-	always @(posedge clk or rstn) begin
-		if (rstn == 0) begin
+	always @(posedge clock or reset) begin
+		if (reset == 1) begin
 			reset_entry <= 1;
 			reset_done <= 0;
 			addr <= 0;
@@ -73,7 +73,7 @@ interface generic_sram_line_en_master_core #(
 		bit[NUM_ADDR_BITS-1:0]	addr,
 		bit[NUM_DATA_BITS-1:0]	data);
 		while (!reset_done) begin
-			@(posedge clk);
+			@(posedge clock);
 		end
 	
 		addr_val = addr;
@@ -82,7 +82,7 @@ interface generic_sram_line_en_master_core #(
 		access_start = 1;
 		
 		while (!access_ack) begin
-			@(posedge clk);
+			@(posedge clock);
 		end
 		access_ack = 0;
 	endtask
@@ -91,7 +91,7 @@ interface generic_sram_line_en_master_core #(
 		bit[NUM_ADDR_BITS-1:0]			addr,
 		output bit[NUM_DATA_BITS-1:0]	data);
 		while (!reset_done) begin
-			@(posedge clk);
+			@(posedge clock);
 		end
 	
 		addr_val = addr;
@@ -99,7 +99,7 @@ interface generic_sram_line_en_master_core #(
 		access_start = 1;
 		
 		while (!access_ack) begin
-			@(posedge clk);
+			@(posedge clock);
 		end
 		data = data_val;
 		access_ack = 0;
@@ -116,23 +116,27 @@ interface generic_sram_line_en_master_bfm #(
 		parameter int	NUM_ADDR_BITS=32,
 		parameter int	NUM_DATA_BITS=32
 		) (
-			input									clk,
-			input									rstn,
-			generic_sram_line_en_if.sram_client		client
+			input									clock,
+			input									reset,
+			output[NUM_ADDR_BITS-1:0]				addr,
+			input[NUM_DATA_BITS-1:0]				read_data,
+			output[NUM_DATA_BITS-1:0]				write_data,
+			output									write_en,
+			output									read_en
 		);
 
 	generic_sram_line_en_master_core #(
 		.NUM_ADDR_BITS  (NUM_ADDR_BITS ), 
 		.NUM_DATA_BITS  (NUM_DATA_BITS )
 		) u_core (
-		.clk            (clk           ), 
-		.rstn           (rstn          ));
+		.clock	(clock           ), 
+		.reset	(reset          ));
 
-	assign client.addr = u_core.addr;
-	assign client.write_data = u_core.write_data;
-	assign client.write_en = u_core.write_en;
-	assign client.read_en = u_core.read_en;
-	assign u_core.read_data = client.read_data;
+	assign addr = u_core.addr;
+	assign write_data = u_core.write_data;
+	assign write_en = u_core.write_en;
+	assign read_en = u_core.read_en;
+	assign u_core.read_data = read_data;
 endinterface
 
 

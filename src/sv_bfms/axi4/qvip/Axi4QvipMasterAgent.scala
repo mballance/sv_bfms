@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.experimental._
 import std_protocol_if.AXI4
 import sv_bfms.axi4.Axi4MasterAgent
+import chisellib.factory.ModuleFactory
 
 class Axi4QvipMasterAgent(p : AXI4.Parameters=new AXI4.Parameters) 
   extends Axi4MasterAgent(p) {
@@ -60,6 +61,10 @@ class Axi4QvipMasterAgent(p : AXI4.Parameters=new AXI4.Parameters)
   qvip.io.BID := io.i.brsp.BID
   qvip.io.BUSER := Bool(false)
   io.i.bready := qvip.io.BREADY
+}
+
+object Axi4QvipMasterAgent extends ModuleFactory[Axi4QvipMasterAgent] {
+  
 }
 
 class axi4_qvip_master(p : AXI4.Parameters) extends BlackBox(Map(
