@@ -13,6 +13,9 @@
 -F ${SV_BFMS}/generic_sram_line_en_master/uvm/sve.F
 ${SV_BFMS}/generic_sram_line_en_master/generic_sram_line_en_master_bfm.sv
 
+-F ${SV_BFMS}/hella_cache_master/uvm/sve.F
+${SV_BFMS}/hella_cache_master/hella_cache_master_bfm.sv
+
 -f ${SV_BFMS}/uart/uvm/uvm.f
 -f ${SV_BFMS}/uart/sv.f
 
