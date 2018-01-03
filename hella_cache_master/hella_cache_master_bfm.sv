@@ -103,20 +103,21 @@ interface hella_cache_master_bfm_core #(
 		req_tag = tag;
 		req_cmd = cmd;
 		req_typ = typ;
-		req_data = data;
 		req_data_mask = data_mask;
 	
 		// Wait for ready
 		do begin
 			@(posedge clock);
 		end while (req_ready == 0);
+		
+		// Write data is driven post-VALID
+		req_data = data;
 	
 		req_addr = 0;
 		req_valid = 0;
 		req_tag = 0;
 		req_cmd = 0;
 		req_typ = 0;
-//		req_data = 0;
 		req_data_mask = 0;
 		req_kill = 0;
 		
