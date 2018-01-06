@@ -99,6 +99,8 @@ class hella_cache_master_driver `hella_cache_master_plist extends uvm_driver #(h
 				m_replay++;
 			end else begin
 				m_req_rsp_data[tag].data = data;
+				$display("%0t %0s: Access Done: addr='h%08h tag=%0d data='h%08h",
+						$time, get_full_name(), m_req_rsp_data[tag].addr, tag, data);
 				->m_complete_ev;
 				m_tag_sem[tag].put(1);
 				
@@ -118,7 +120,8 @@ class hella_cache_master_driver `hella_cache_master_plist extends uvm_driver #(h
 		forever begin
 			m_nack_q.get(item);
 		
-			$display("Received NACK item");
+			$display("%0t %0s: Received NACK item - addr='h%08h tag=%0d data='h%08h",
+					$time, get_full_name(), item.addr, item.tag, item.data);
 			m_req_sem.get(1);
 			vif.hella_cache_master_bfm_send_req(
 					item.addr, item.tag, item.cmd,
@@ -157,6 +160,7 @@ class hella_cache_master_driver `hella_cache_master_plist extends uvm_driver #(h
 			m_req_rsp_data[item.tag].addr      = item.addr;
 			m_req_rsp_data[item.tag].data      = item.data;
 			m_req_rsp_data[item.tag].data_mask = item.data_mask;
+			m_req_rsp_data[item.tag].tag       = item.tag;
 			m_req_rsp_data[item.tag].cmd       = item.cmd;
 			m_req_rsp_data[item.tag].typ       = item.typ;
 			

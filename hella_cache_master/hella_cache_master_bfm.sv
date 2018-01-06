@@ -92,6 +92,8 @@ interface hella_cache_master_bfm_core #(
 		longint	unsigned	data,
 		int unsigned		data_mask);
 		
+		$display("--> %0t - %m send_req 'h%08h", $time, addr);
+		
 		// Wait for reset
 		while (reset == 1) begin
 			@(posedge clock);
@@ -121,7 +123,8 @@ interface hella_cache_master_bfm_core #(
 		req_data_mask = 0;
 		req_kill = 0;
 		
-		@(posedge clock);
+//		@(posedge clock);
+		$display("<-- %0t - %m send_req 'h%08h", $time, addr);
 	endtask
 		
 	task hella_cache_master_bfm_recv_rsp(
@@ -129,6 +132,8 @@ interface hella_cache_master_bfm_core #(
 		output int unsigned		tag,
 		output int unsigned		typ,
 		output longint unsigned	data);
+		
+		$display("--> %0t - %m recv_rsp", $time);
 		
 		// Wait for reset
 		while (reset == 1) begin
@@ -149,6 +154,7 @@ interface hella_cache_master_bfm_core #(
 		end
 		
 		@(posedge clock);
+		$display("<-- %0t - %m recv_rsp", $time);
 	endtask
 
 endinterface
