@@ -16,8 +16,27 @@ class hella_cache_master_seq_item `hella_cache_master_plist extends uvm_sequence
 	} type_e;
 	
 	typedef enum {
-		M_XRD = 0,
-		M_XWR
+		M_XRD = 0, // int load
+		M_XWR,     // int store
+		M_PFR,     // prefetch with intent to read
+		M_PFW,     // prefetch with intent to write
+		M_XA_SWAP,   // Swap request
+		M_FLUSH_ALL, // Flush all lines
+		M_XLR,       // Load-reserve request
+		M_XSC,       // 7  - store-conditional request
+		M_XA_ADD,
+		M_XA_XOR,
+		M_XA_OR,
+		M_XA_AND,
+		M_XA_MIN,
+		M_XA_MAX,
+		M_XA_MINU,
+		M_XA_MAXU,
+		M_FLUSH,      // 16 - Write back dirty data and cede R/W permissions
+		M_PWR,        // partial (masked) store
+		M_PRODUCE,    // write back dirty data and cede R/W permissions
+		M_CLEAN,      // write back dirty data and retain R/W permissions
+		M_SFENCE      // flush TLB
 	} cmd_e;
 	
 	rand bit[NUM_ADDR_BITS-1:0]			addr;
@@ -26,6 +45,8 @@ class hella_cache_master_seq_item `hella_cache_master_plist extends uvm_sequence
 	rand bit[NUM_TAG_BITS-1:0]			tag;
 	rand cmd_e							cmd;
 	rand type_e							typ;
+	
+	bit									valid;
 	
 	// TODO: Declare fields here
 	

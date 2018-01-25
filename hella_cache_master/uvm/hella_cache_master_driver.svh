@@ -52,7 +52,7 @@ class hella_cache_master_driver `hella_cache_master_plist extends uvm_driver #(h
 	task alloc_tag(bit is_read, output int unsigned tag);
 		int tag_t = -1;
 		
-		$display("--> alloc_tag");
+//		$display("--> alloc_tag");
 		
 		while (tag_t == -1) begin
 			// See if there is an available tag
@@ -80,7 +80,7 @@ class hella_cache_master_driver `hella_cache_master_plist extends uvm_driver #(h
 		end
 		
 		tag = tag_t;
-		$display("<-- alloc_tag %0d", tag);
+//		$display("<-- alloc_tag %0d", tag);
 	endtask
 	
 	task rsp_thread();
@@ -92,15 +92,40 @@ class hella_cache_master_driver `hella_cache_master_plist extends uvm_driver #(h
 			m_cfg.vif.hella_cache_master_bfm_recv_rsp(
 					nack, tag, typ, data);
 		
-			$display("-- Recv tag=%0d nack=%0d", tag, nack);
+//			$display("-- Recv tag=%0d nack=%0d", tag, nack);
 			
 			if (nack) begin
-				m_nack_q.put(m_req_rsp_data[tag]);
-				m_replay++;
+				if (m_req_rsp_data[tag].valid) begin
+					m_nack_q.put(m_req_rsp_data[tag]);
+					m_replay++;
+				end else begin
+					int real_id = -1;
+					$display("Warning: NACK of a completed access");
+					for (int i=0; i<MAX_TAG+1; i++) begin
+						if (m_req_rsp_data[i].valid) begin
+							real_id = i;
+							break;
+						end
+					end
+					
+					if (real_id != -1) begin
+						$display("Note: Retrying with ID %0d", real_id);
+						m_nack_q.put(m_req_rsp_data[real_id]);
+					end else begin
+						$display("FATAL: Failed to find ID");
+					end
+//					m_cfg.vif.hella_cache_master_bfm_clear_kill();
+				end
 			end else begin
+				int real_tag = tag;
+				
+				if (!m_req_rsp_data[real_tag].valid) begin
+					$display("Error: ACK of a completed access %0d", tag); 
+				end
 				m_req_rsp_data[tag].data = data;
-				$display("%0t %0s: Access Done: addr='h%08h tag=%0d data='h%08h",
-						$time, get_full_name(), m_req_rsp_data[tag].addr, tag, data);
+				m_req_rsp_data[tag].valid = 0;
+//				$display("%0t %0s: Access Done: addr='h%08h tag=%0d data='h%08h",
+//						$time, get_full_name(), m_req_rsp_data[tag].addr, tag, data);
 				->m_complete_ev;
 				m_tag_sem[tag].put(1);
 				
@@ -120,8 +145,8 @@ class hella_cache_master_driver `hella_cache_master_plist extends uvm_driver #(h
 		forever begin
 			m_nack_q.get(item);
 		
-			$display("%0t %0s: Received NACK item - addr='h%08h tag=%0d data='h%08h",
-					$time, get_full_name(), item.addr, item.tag, item.data);
+//			$display("%0t %0s: Received NACK item - addr='h%08h tag=%0d data='h%08h",
+//					$time, get_full_name(), item.addr, item.tag, item.data);
 			m_req_sem.get(1);
 			vif.hella_cache_master_bfm_send_req(
 					item.addr, item.tag, item.cmd,
@@ -134,11 +159,11 @@ class hella_cache_master_driver `hella_cache_master_plist extends uvm_driver #(h
 		input int unsigned			tag,
 		output longint unsigned		data);
 		// Wait for complete
-		$display("--> m_tag_sem[%0d].get", tag);
+//		$display("--> m_tag_sem[%0d].get", tag);
 		m_tag_sem[tag].get(1);
 		m_tag_active[tag] = 0;
 		data = m_req_rsp_data[tag].data;
-		$display("<-- m_tag_sem[%0d].get", tag);
+//		$display("<-- m_tag_sem[%0d].get", tag);
 		
 		// TODO: pass back values
 	endtask	
@@ -155,7 +180,7 @@ class hella_cache_master_driver `hella_cache_master_plist extends uvm_driver #(h
 		forever begin
 			seq_item_port.get_next_item(item);
 			// TODO: execute the sequence item
-			item.print();
+//			item.print();
 			
 			m_req_rsp_data[item.tag].addr      = item.addr;
 			m_req_rsp_data[item.tag].data      = item.data;
@@ -163,6 +188,7 @@ class hella_cache_master_driver `hella_cache_master_plist extends uvm_driver #(h
 			m_req_rsp_data[item.tag].tag       = item.tag;
 			m_req_rsp_data[item.tag].cmd       = item.cmd;
 			m_req_rsp_data[item.tag].typ       = item.typ;
+			m_req_rsp_data[item.tag].valid     = 1;
 			
 			// Send the item to the analysis port
 			ap.write(item);

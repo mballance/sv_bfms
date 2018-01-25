@@ -79,6 +79,7 @@ interface hella_cache_master_bfm_core #(
 	wire  [NUM_TAG_BITS-1:0]	rsp_tag;
 	wire  [2:0]					rsp_typ;
 	wire  [NUM_DATA_BITS-1:0]	rsp_data;
+	semaphore					rsp_sem = new(0);
 	
 	task hella_cache_master_bfm_clear_kill();
 		req_kill = 0;
@@ -92,14 +93,14 @@ interface hella_cache_master_bfm_core #(
 		longint	unsigned	data,
 		int unsigned		data_mask);
 		
-		$display("--> %0t - %m send_req 'h%08h", $time, addr);
+//		$display("--> %0t - %m send_req 'h%08h", $time, addr);
 		
 		// Wait for reset
 		while (reset == 1) begin
 			@(posedge clock);
 		end
 
-		$display("Assign req_cmd=%0d req_typ=%0d", req_cmd, req_typ);
+//		$display("Assign req_cmd=%0d req_typ=%0d", req_cmd, req_typ);
 		req_addr = addr;
 		req_valid = 1;
 		req_tag = tag;
@@ -124,8 +125,23 @@ interface hella_cache_master_bfm_core #(
 		req_kill = 0;
 		
 //		@(posedge clock);
-		$display("<-- %0t - %m send_req 'h%08h", $time, addr);
+//		$display("<-- %0t - %m send_req 'h%08h", $time, addr);
 	endtask
+	
+	always @ (posedge clock) begin
+		if (reset == 1) begin
+			while (rsp_sem.try_get()) begin
+				rsp_sem.get(1);
+			end
+		end else begin
+			if (rsp_valid == 1 || rsp_nack == 1) begin
+				rsp_sem.put(1);
+				if (rsp_nack) begin
+					req_kill <= 1;
+				end
+			end
+		end
+	end
 		
 	task hella_cache_master_bfm_recv_rsp(
 		output int unsigned		nack,
@@ -133,28 +149,16 @@ interface hella_cache_master_bfm_core #(
 		output int unsigned		typ,
 		output longint unsigned	data);
 		
-		$display("--> %0t - %m recv_rsp", $time);
-		
-		// Wait for reset
-		while (reset == 1) begin
-			@(posedge clock);
-		end
-
-		while (rsp_valid == 0 && rsp_nack == 0) begin
-			@(posedge clock);
-		end
+//		$display("--> %0t - %m recv_rsp", $time);
 	
+		rsp_sem.get(1);
+
 		nack = rsp_nack;
 		tag = rsp_tag;
 		typ = rsp_typ;
 		data = rsp_data;
 		
-		if (nack) begin
-			req_kill = 1;
-		end
-		
-		@(posedge clock);
-		$display("<-- %0t - %m recv_rsp", $time);
+//		$display("<-- %0t - %m recv_rsp", $time);
 	endtask
 
 endinterface
