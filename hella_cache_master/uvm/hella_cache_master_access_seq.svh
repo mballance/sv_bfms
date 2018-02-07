@@ -51,9 +51,11 @@ class hella_cache_master_access_seq`hella_cache_master_plist extends hella_cache
 		finish_item(seq_i);
 		
 		// TODO: wait for response
-		agent.m_driver.wait_rsp(
-				seq_i.tag,
-				data);
+//		if (cmd == seq_t::M_XRD) begin
+			agent.m_driver.wait_rsp(
+					seq_i.tag,
+					data);
+//		end
 
 	endtask
 

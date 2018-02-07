@@ -8,6 +8,7 @@
 package hella_cache_master_agent_pkg;
 	import uvm_pkg::*;
 	import sv_bfms_api_pkg::*;
+	import hella_cache_master_api_pkg::*;
 
 	`include "hella_cache_master_config.svh"
 	`include "hella_cache_master_seq_item.svh"

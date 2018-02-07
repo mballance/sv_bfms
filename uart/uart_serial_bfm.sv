@@ -19,7 +19,8 @@ interface uart_serial_bfm (
 		input				ri_pad_i,
 		input				dcd_pad_i
 		);
-	import uvm_pkg::*;
+	//pragma attribute uart_serial_bfm partition_interface_xif
+	parameter BFM_ID = "uart_serial_bfm";
 	
 	uart_serial_bfm_core u_core(
 			.clk_i(clk_i),
@@ -32,6 +33,7 @@ interface uart_serial_bfm (
 endinterface
 
 interface uart_serial_bfm_core(input clk_i, input rst_i);
+	//pragma attribute uart_serial_bfm_core partition_interface_xif
 		
 	wire srx_pad_i;
 		
@@ -201,7 +203,7 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 							tx_state <= 1;
 							stx_pad_r <= 0;
 							tx_bit_cnt <= 0;
-							tx_start = 0;
+							tx_start <= 0;
 						end
 					end
 				
@@ -218,7 +220,7 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 					2: begin
 						stx_pad_r <= tx_data[0];
 						tx_data <= {1'b0, tx_data[7:1]};
-						tx_data >>= 1;
+// TODO:						tx_data >>= 1;
 						tx_state <= 3;
 						tx_bit_cnt <= tx_bit_cnt + 1;
 						//						$display("%t: Begin Data Bit %0d", $time, tx_bits_transmitted);
