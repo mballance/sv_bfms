@@ -7,7 +7,7 @@
  * 
  * TODO: Add interface documentation
  */
-interface uart_serial_bfm (
+module uart_serial_bfm (
 		input				clk_i,
 		input				rst_i,
 		output				stx_pad_o,
@@ -19,7 +19,6 @@ interface uart_serial_bfm (
 		input				ri_pad_i,
 		input				dcd_pad_i
 		);
-	//pragma attribute uart_serial_bfm partition_interface_xif
 	parameter BFM_ID = "uart_serial_bfm";
 	
 	uart_serial_bfm_core u_core(
@@ -30,7 +29,7 @@ interface uart_serial_bfm (
 	assign stx_pad_o = u_core.stx_pad_r;
 	assign u_core.srx_pad_i = srx_pad_i;
 
-endinterface
+endmodule
 
 interface uart_serial_bfm_core(input clk_i, input rst_i);
 	//pragma attribute uart_serial_bfm_core partition_interface_xif

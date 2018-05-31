@@ -3,11 +3,11 @@
  ****************************************************************************/
 
 /**
- * Interface: hella_cache_master_bfm
+ * Module: hella_cache_master_bfm
  * 
  * TODO: Add interface documentation
  */
-interface hella_cache_master_bfm #(
+module hella_cache_master_bfm #(
 		parameter int		NUM_ADDR_BITS=32,
 		parameter int		NUM_DATA_BITS=32,
 		parameter int		NUM_TAG_BITS=7
@@ -29,8 +29,6 @@ interface hella_cache_master_bfm #(
 		input  [2:0]					rsp_typ,
 		input  [NUM_DATA_BITS-1:0]		rsp_data
 		);
-	//pragma attribute hella_cache_master_bfm partition_interface_xif
-	
 
 	hella_cache_master_bfm_core #(
 		.NUM_ADDR_BITS  (NUM_ADDR_BITS ), 
@@ -56,7 +54,7 @@ interface hella_cache_master_bfm #(
 	assign u_core.rsp_typ = rsp_typ;
 	assign u_core.rsp_data = rsp_data;
 
-endinterface
+endmodule
 
 interface hella_cache_master_bfm_core #(
 		parameter int		NUM_ADDR_BITS=32,
@@ -66,12 +64,14 @@ interface hella_cache_master_bfm_core #(
 		input			clock,
 		input			reset
 		);
-	//pragma attribute hella_cache_master_bfm_core partition_interface_xif
-	
+//pragma attribute hella_cache_master_bfm_core partition_interface_xif
+
 	import hella_cache_master_api_pkg::*;
 	
 	hella_cache_master_api			api;
-	// pragma tbx one_way_caller_opt api.bfm_rsp on
+	//disabled-pragma tbx one_way_caller_opt api.bfm_rsp on
+`ifdef UNDEFINED	
+`endif
 	
 	typedef struct packed {
 		bit[NUM_ADDR_BITS-1:0]		addr;
@@ -205,25 +205,28 @@ interface hella_cache_master_bfm_core #(
 //		@(posedge clock);
 //		$display("<-- %0t - %m send_req 'h%08h", $time, addr);
 	endtask
-	
+
 	always @ (posedge clock) begin
 		if (reset == 0) begin
 			if (rsp_valid == 1) begin
-				hella_cache_master_bfm_rsp(rsp_tag, rsp_typ, rsp_data);
+				api.call_bfm_rsp(rsp_tag, rsp_typ, rsp_data);
+//				hella_cache_master_bfm_rsp(rsp_tag, rsp_typ, rsp_data);
 			end
 		end 
 	end
+`ifdef UNDEFINED	
+`endif
 		
-	task hella_cache_master_bfm_rsp(
-		input int unsigned		tag,
-		input int unsigned		typ,
-		input longint unsigned	data);
-		if (api != null) begin
-			api.bfm_rsp(tag, typ, data);
-		end else begin
-			$display("Error: %m no API handle");
-		end
-	endtask
+//	task hella_cache_master_bfm_rsp(
+//		input int unsigned		tag,
+//		input int unsigned		typ,
+//		input longint unsigned	data);
+//		if (api != null) begin
+//			api.bfm_rsp(tag, typ, data);
+//		end else begin
+//			$display("Error: %m no API handle");
+//		end
+//	endtask
 
 endinterface
 

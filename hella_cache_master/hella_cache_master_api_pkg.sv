@@ -9,12 +9,20 @@
  */
 package hella_cache_master_api_pkg;
 	
-	interface class hella_cache_master_api;
+	class hella_cache_master_api;
 		
-		pure virtual function void bfm_rsp(
+		virtual function void bfm_rsp(
 			int unsigned		tag,
 			int unsigned		typ,
 			longint unsigned	data);
+		endfunction
+
+		function void call_bfm_rsp(
+			int unsigned		tag,
+			int unsigned		typ,
+			longint unsigned	data);
+			bfm_rsp(tag, typ, data);
+		endfunction
 		
 	endclass
 

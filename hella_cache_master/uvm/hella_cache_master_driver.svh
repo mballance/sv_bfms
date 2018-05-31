@@ -1,8 +1,21 @@
 
 
+typedef class hella_cache_master_driver;
+class hella_cache_master_api_driver_proxy `hella_cache_master_plist extends hella_cache_master_api;
+
+	hella_cache_master_driver `hella_cache_master_params driver;
+
+	virtual function void bfm_rsp(
+			int unsigned		tag,
+			int unsigned		typ,
+			longint unsigned	data);
+		driver.bfm_rsp(tag, typ, data);
+	endfunction
+
+endclass
+
 class hella_cache_master_driver `hella_cache_master_plist 
-		extends uvm_driver #(hella_cache_master_seq_item `hella_cache_master_params)
-		implements hella_cache_master_api;
+		extends uvm_driver #(hella_cache_master_seq_item `hella_cache_master_params);
 	
 	typedef hella_cache_master_driver `hella_cache_master_params this_t;
 	typedef hella_cache_master_config `hella_cache_master_params cfg_t;
@@ -25,6 +38,8 @@ class hella_cache_master_driver `hella_cache_master_plist
 	mailbox #(seq_i_t)						m_nack_q = new();
 	semaphore								m_req_sem = new(1);
 	int unsigned							m_replay = 0;
+	hella_cache_master_api_driver_proxy `hella_cache_master_params		m_proxy;
+
 	
 	function new(string name, uvm_component parent=null);
 		super.new(name, parent);
@@ -36,6 +51,9 @@ class hella_cache_master_driver `hella_cache_master_plist
 		foreach (m_tag_sem[i]) begin
 			m_tag_sem[i] = new(0);
 		end
+
+		m_proxy = new;
+		m_proxy.driver = this;
 		
 	endfunction
 	
@@ -47,7 +65,7 @@ class hella_cache_master_driver `hella_cache_master_plist
 		m_cfg = cfg_t::get_config(this);
 	
 		// Provide the callback path
-		m_cfg.vif.api = this;
+		m_cfg.vif.api = m_proxy;
 	endfunction
 	
 	function void connect_phase(uvm_phase phase);
