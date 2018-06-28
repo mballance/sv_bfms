@@ -100,6 +100,10 @@ def write_packages_mk(
       for d in info.deps():
           fh.write(d + " ")
       fh.write("\n")
+      fh.write(p + "_clean_deps=")
+      for d in info.deps():
+          fh.write("clean_" + d + " ")
+      fh.write("\n")
 
   fh.write("else # Rules\n");
   for p in package_deps.keys():
@@ -108,6 +112,11 @@ def write_packages_mk(
      
       if info.is_src:
           fh.write("\t$(Q)$(MAKE) PACKAGES_DIR=$(PACKAGES_DIR) PHASE2=true -C $(PACKAGES_DIR)/" + p + "/scripts -f ivpm.mk build\n")
+      fh.write("\n");
+      fh.write("clean_" + p + " : $(" + p + "_clean_deps)\n");
+     
+      if info.is_src:
+          fh.write("\t$(Q)$(MAKE) PACKAGES_DIR=$(PACKAGES_DIR) PHASE2=true -C $(PACKAGES_DIR)/" + p + "/scripts -f ivpm.mk clean\n")
       fh.write("\n");
 
   fh.write("\n")
@@ -203,6 +212,9 @@ def update_package(
           cwd = os.getcwd()
           os.chdir(packages_dir)
           status = os.system("git clone " + package_src)
+          os.chdir(cwd)
+          os.chdir(packages_dir + "/" + package)
+          status = os.system("git submodule update --init --recursive")
           os.chdir(cwd)
       else:
           print "Error: unknown URL extension \"" + ext + "\""

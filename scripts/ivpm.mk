@@ -26,10 +26,16 @@ RULES := 1
 
 ifeq (true,$(PHASE2))
 build : $(SV_BFMS_JAR)
+
+clean : clean_sv_bfms
+	$(Q)rm -rf $(LIB_DIR)
 else
+clean : clean_sv_bfms
+
 build : $(sv_bfms_deps)
 	$(MAKE) -f $(SV_BFMS_SCRIPTS_DIR)/ivpm.mk PHASE2=true build
 endif
+
 
 $(SV_BFMS_JAR) : $(SV_BFMS_SRC) $(SV_BFMS_DEPS)
 	$(Q)if test ! -d `dirname $@`; then mkdir -p `dirname $@`; fi
