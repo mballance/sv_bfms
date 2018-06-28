@@ -12,11 +12,13 @@ class Axi4QvipMonitorAgent(p : AXI4.Parameters=new AXI4.Parameters)
   val qvip = Module(new axi4_qvip_monitor(p))
   
   qvip.io.ACLK := clock
+/*
   when (reset === Bool(true)) {
     qvip.io.ARESETn := Bool(false)
   } .otherwise {
     qvip.io.ARESETn := Bool(true)
   }
+ */
   io.i.awreq.AWVALID := qvip.io.AWVALID
   io.i.awreq.AWADDR := qvip.io.AWADDR
   io.i.awreq.AWPROT := qvip.io.AWPROT

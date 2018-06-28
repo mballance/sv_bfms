@@ -1,0 +1,6 @@
+   
+ 
+chiselscripts@http://github.com/mballance/chiselscripts.git
+chisellib@http://github.com/mballance/chisellib.git
+std_protocol_if@http://github.com/mballance/std_protocol_if.git
+
