@@ -27,10 +27,12 @@ RULES := 1
 ifeq (true,$(PHASE2))
 build : $(SV_BFMS_JAR)
 
-clean : clean_sv_bfms
-	$(Q)rm -rf $(LIB_DIR)
+clean : 
+	$(Q)rm -rf $(CHISELLIB_DIR)/build $(LIB_DIR)
 else
-clean : clean_sv_bfms
+
+clean : $(sv_bfms_clean_deps)
+	$(MAKE) -f $(SV_BFMS_SCRIPTS_DIR)/ivpm.mk PHASE2=true clean
 
 build : $(sv_bfms_deps)
 	$(MAKE) -f $(SV_BFMS_SCRIPTS_DIR)/ivpm.mk PHASE2=true build
