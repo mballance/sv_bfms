@@ -16,6 +16,12 @@ class UartSerialBFM extends Module {
   
   bfm.io.srx_pad_i := io.s.TxD
   io.s.RxD := bfm.io.stx_pad_o
+  
+  io.s.CTS := Bool(true)
+  io.s.DSR := Bool(true)
+  io.s.RI := Bool(false)
+  io.s.DCD := Bool(true)
+  
 }
 
 class uart_serial_bfm extends BlackBox {
