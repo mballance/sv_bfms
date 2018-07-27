@@ -15,4 +15,14 @@
 		<nature>org.scala-ide.sdt.core.scalanature</nature>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
+	<variableList>
+		<variable>
+			<name>STD_PROTOCOL_IF</name>
+			<value>$%7BPACKAGES_DIR%7D/std_protocol_if</value>
+		</variable>
+		<variable>
+			<name>SV_BFMS</name>
+			<value>$%7BPROJECT_LOC%7D</value>
+		</variable>
+	</variableList>
 </projectDescription>

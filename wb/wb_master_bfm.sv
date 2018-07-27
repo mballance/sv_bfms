@@ -9,6 +9,9 @@ interface wb_master_bfm_core #(
 		input						clk,
 		input						rstn
 		);
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
+		import wb_master_api_pkg::*;
+`endif
 	
 	reg							reset = 0;
 	reg							reset_done = 0;
@@ -37,11 +40,15 @@ interface wb_master_bfm_core #(
 	
 	reg[1:0] state;
 
-	`ifdef BFM_NONBLOCK
-		initial begin
-			wb_master_bfm_register();
-		end
-	`endif	
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
+	wb_master_api				m_api;
+`else
+	int unsigned				m_id;
+	
+	initial begin
+		m_id = wb_master_bfm_register($sformatf("%m"));
+	end
+`endif	
 
 	// BFM State machine
 	always @(posedge clk) begin
@@ -59,9 +66,7 @@ interface wb_master_bfm_core #(
 			WE_rs  <= 0;
 		end else begin
 			if (reset == 1) begin
-`ifdef BFM_NONBLOCK
 				wb_master_bfm_reset();
-`endif
 				reset_done <= 1;
 				reset <= 0;
 			end
@@ -87,6 +92,7 @@ interface wb_master_bfm_core #(
 				
 				1: begin
 					if (master.ACK) begin
+						response();
 						`ifdef BFM_NONBLOCK						
 							wb_master_bfm_acknowledge(master.ERR);
 						`else
@@ -137,7 +143,9 @@ interface wb_master_bfm_core #(
 	`ifndef BFM_NONBLOCK
 		export "DPI-C" task wb_master_bfm_get_data;
 	`endif	
-	
+
+	/****************************************************************
+	 ****************************************************************
 	task wb_master_bfm_request(
 		longint unsigned 			ADR,
 		byte unsigned				CTI,
@@ -156,6 +164,7 @@ interface wb_master_bfm_core #(
 		SEL_r = SEL;
 		WE_r = WE;
 		req = 1;
+
 		// non-SC BFM version blocks waiting for completion
 `ifndef BFM_NONBLOCK
 			ack = 0; // TODO: should check?
@@ -165,22 +174,37 @@ interface wb_master_bfm_core #(
 			ack = 0;
 `endif
 	endtask
-	`ifdef BFM_NONBLOCK
-		export "DPI-C" task wb_master_bfm_request;
-	`endif	
+		
+`ifndef HAVE_HDL_VIRTUAL_INTERFACE
+	export "DPI-C" task wb_master_bfm_request;
 
-	`ifdef BFM_NONBLOCK
-		import "DPI-C" context task wb_master_bfm_acknowledge(
-				byte unsigned			ERR
-			);
+	import "DPI-C" context task wb_master_bfm_response(
+			int unsigned			id,
+			byte unsigned			ERR
+	);
 	
-		import "DPI-C" context task wb_master_bfm_reset();
+	import "DPI-C" context task wb_master_bfm_reset(int unsigned id);
 	
 
-		import "DPI-C" context task wb_master_bfm_register();
-	`else
+	import "DPI-C" context function int unsigned wb_master_bfm_register(string path);
+`endif
 	
-	`endif
+	task reset();
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
+		m_api.reset();
+`else
+		wb_master_bfm_reset(m_id);
+`endif
+	endtask
+		
+	task response();
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
+		m_api.response(master.ERR);
+`else
+		wb_master_bfm_response(m_id, master.ERR);
+`endif
+	endtask
+	
 endinterface
 
 /**
