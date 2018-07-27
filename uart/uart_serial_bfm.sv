@@ -255,6 +255,7 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 	end		
 		
 	task uart_serial_bfm_do_tx(input byte unsigned data);
+`ifdef UNDEFINED
 		
 		// Ensure we do a reset
 		while (reset_done == 0) begin
@@ -269,13 +270,14 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 		while (tx_done == 0) begin
 			@(posedge clk_i);
 		end
-		
+`endif		
 	endtask
 	
 	task automatic uart_serial_bfm_do_rx(
 		output byte unsigned 	data, 
 		output byte unsigned 	valid, 
 		input int 				timeout=-1);
+`ifdef UNDEFINED
 		int count = 0;
 		// Ensure we do a reset
 		while (reset_done == 0) begin
@@ -294,9 +296,11 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 		
 		// Wait for data to be available
 		data = rx_data;
+`endif
 	endtask	
 	
 	task automatic uart_serial_bfm_wait_for_rx(input int byte_time);
+`ifdef UNDEFINED
 		while (reset_done == 0) begin
 			@(posedge clk_i);
 		end
@@ -306,6 +310,7 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 			
 			while (clk_16x == 0) @(posedge clk_i);
 		end
+`endif
 	endtask
 		
 	task uart_serial_bfm_set_clkdiv(bit[15:0] div);

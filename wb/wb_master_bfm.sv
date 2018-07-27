@@ -19,7 +19,6 @@ interface wb_master_bfm_core #(
 	reg[WB_DATA_WIDTH-1:0]		write_data_buf;
 	reg[WB_DATA_WIDTH-1:0]		read_data_buf;
 	reg							req = 0;
-	reg							ack = 0;
 	
 	reg[WB_ADDR_WIDTH-1:0]		ADR_r;
 	reg[WB_ADDR_WIDTH-1:0]		ADR_rs;
@@ -35,6 +34,8 @@ interface wb_master_bfm_core #(
 	reg							WE_r;
 	reg							WE_rs;
 	wire[WB_DATA_WIDTH-1:0]		DAT_R;
+	wire						ACK;
+	wire						ERR;
 
 
 	
@@ -66,7 +67,7 @@ interface wb_master_bfm_core #(
 			WE_rs  <= 0;
 		end else begin
 			if (reset == 1) begin
-				wb_master_bfm_reset();
+				send_reset_done();
 				reset_done <= 1;
 				reset <= 0;
 			end
@@ -91,13 +92,8 @@ interface wb_master_bfm_core #(
 				end
 				
 				1: begin
-					if (master.ACK) begin
+					if (ACK) begin
 						response();
-						`ifdef BFM_NONBLOCK						
-							wb_master_bfm_acknowledge(master.ERR);
-						`else
-							ack = 1;
-						`endif
 						if (!WE_r) begin
 							read_data_buf = DAT_R;
 						end
@@ -122,42 +118,43 @@ interface wb_master_bfm_core #(
 		ADDRESS_WIDTH = WB_ADDR_WIDTH;
 		DATA_WIDTH = WB_DATA_WIDTH;
 	endtask
-	`ifndef BFM_NONBLOCK
+`ifndef HAVE_HDL_VIRTUAL_INTERFACE
 		export "DPI-C" task wb_master_bfm_get_parameters;
-	`endif	
+`endif /* HAVE_HDL_VIRTUAL_INTERFACE */
 	
 	task wb_master_bfm_set_data(
 		int unsigned				idx,
 		int unsigned				data);
 		write_data_buf = data;
 	endtask
-	`ifndef BFM_NONBLOCK
+`ifndef HAVE_HDL_VIRTUAL_INTERFACE
 		export "DPI-C" task wb_master_bfm_set_data;
-	`endif
+`endif /* HAVE_HDL_VIRTUAL_INTERFACE */
 	
 	task wb_master_bfm_get_data(
 		input int unsigned				idx,
 		output int unsigned				data);
 		data = read_data_buf;
 	endtask
-	`ifndef BFM_NONBLOCK
+`ifndef HAVE_HDL_VIRTUAL_INTERFACE
 		export "DPI-C" task wb_master_bfm_get_data;
-	`endif	
+`endif /* HAVE_HDL_VIRTUAL_INTERFACE */
+
 
 	/****************************************************************
-	 ****************************************************************
+	 ****************************************************************/
 	task wb_master_bfm_request(
 		longint unsigned 			ADR,
 		byte unsigned				CTI,
 		byte unsigned				BTE,
 		int unsigned				SEL,
 		byte unsigned				WE);
-`ifndef BFM_NONBLOCK
-			// Wait for reset
-			while (reset_done == 0) begin
-				@(posedge clk);
-			end
-`endif
+//`ifndef BFM_NONBLOCK
+//			// Wait for reset
+//			while (reset_done == 0) begin
+//				@(posedge clk);
+//			end
+//`endif
 		ADR_r = ADR;
 		CTI_r = CTI;
 		BTE_r = BTE;
@@ -165,23 +162,23 @@ interface wb_master_bfm_core #(
 		WE_r = WE;
 		req = 1;
 
-		// non-SC BFM version blocks waiting for completion
-`ifndef BFM_NONBLOCK
-			ack = 0; // TODO: should check?
-			do begin
-				@(posedge clk);
-			end while (ack == 0);
-			ack = 0;
-`endif
+//		// non-SC BFM version blocks waiting for completion
+//`ifndef BFM_NONBLOCK
+//			ack = 0; // TODO: should check?
+//			do begin
+//				@(posedge clk);
+//			end while (ack == 0);
+//			ack = 0;
+//`endif
 	endtask
-		
 `ifndef HAVE_HDL_VIRTUAL_INTERFACE
 	export "DPI-C" task wb_master_bfm_request;
+`endif /* HAVE_HDL_VIRTUAL_INTERFACE */
 
+`ifndef HAVE_HDL_VIRTUAL_INTERFACE
 	import "DPI-C" context task wb_master_bfm_response(
 			int unsigned			id,
-			byte unsigned			ERR
-	);
+			byte unsigned			ERR);
 	
 	import "DPI-C" context task wb_master_bfm_reset(int unsigned id);
 	
@@ -189,7 +186,7 @@ interface wb_master_bfm_core #(
 	import "DPI-C" context function int unsigned wb_master_bfm_register(string path);
 `endif
 	
-	task reset();
+	task send_reset_done();
 `ifdef HAVE_HDL_VIRTUAL_INTERFACE
 		m_api.reset();
 `else
@@ -199,9 +196,9 @@ interface wb_master_bfm_core #(
 		
 	task response();
 `ifdef HAVE_HDL_VIRTUAL_INTERFACE
-		m_api.response(master.ERR);
+		m_api.response(ERR);
 `else
-		wb_master_bfm_response(m_id, master.ERR);
+		wb_master_bfm_response(m_id, ERR);
 `endif
 	endtask
 	
@@ -212,7 +209,7 @@ endinterface
  * 
  * TODO: Add module documentation
  */
-interface wb_master_bfm #(
+module wb_master_bfm #(
 		parameter int			WB_ADDR_WIDTH = 32,
 		parameter int			WB_DATA_WIDTH = 32
 		) (
@@ -228,7 +225,9 @@ interface wb_master_bfm #(
 			.clk(clk),
 			.rstn(rstn));
 	
-	
+
+	assign u_core.ACK = master.ACK;
+	assign u_core.ERR = master.ERR;
 	assign master.ADR = u_core.ADR_rs;
 	assign master.CTI = u_core.CTI_rs;
 	assign master.BTE = u_core.BTE_rs;
@@ -240,5 +239,5 @@ interface wb_master_bfm #(
 	assign master.WE  = u_core.WE_rs;	
 	
 
-endinterface
+endmodule
 
