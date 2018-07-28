@@ -45,7 +45,8 @@
 
 interface `GENERIC_SRAM_BYTE_EN_BFM_NAME #(
 	parameter ADDRESS_WIDTH = 7,
-	parameter DATA_WIDTH    = 128
+	parameter DATA_WIDTH    = 128,
+	parameter INIT_FILE     = ""
 ) (
 	input                           i_clk,
 	input      [DATA_WIDTH-1:0]     i_write_data,
@@ -64,6 +65,8 @@ localparam OFFSET_LOW_BIT = ($clog2(DATA_WIDTH/8));
 localparam report_uninit = 0;
 
 initial begin
+	$display("OFFSET_HIGH_BIT=%0d OFFSET_LOW_BIT=%0d",
+			OFFSET_HIGH_BIT, OFFSET_LOW_BIT);
 	for (i=0; i<(2**ADDRESS_WIDTH); i++) begin
 		init[i] = 0;
 	end
@@ -115,6 +118,8 @@ end
     	longint unsigned	offset,
     	int unsigned 		data);
     	if (offset[OFFSET_HIGH_BIT:OFFSET_LOW_BIT] < (2**ADDRESS_WIDTH)-1) begin
+//    		$display("WRITE: mem['h%04h] = 'h%08h", 
+//    				offset[OFFSET_HIGH_BIT:OFFSET_LOW_BIT], data);
 	    	mem[offset[OFFSET_HIGH_BIT:OFFSET_LOW_BIT]] = data;
     	end else begin
     		$display("Error: ram(32)[%0d] = 'h%08h (offset='h%08h)", 
@@ -126,7 +131,9 @@ end
     task generic_sram_byte_en_read32(
     	longint unsigned	offset,
     	output int unsigned data);
-    	data = mem[offset[OFFSET_HIGH_BIT:2]];
+    	data = mem[offset[OFFSET_HIGH_BIT:OFFSET_LOW_BIT]];
+//    	$display("READ: mem['h%04h] = 'h%08h", 
+//    			offset[OFFSET_HIGH_BIT:OFFSET_LOW_BIT], data);
     endtask
     export "DPI-C" task generic_sram_byte_en_read32;
     
