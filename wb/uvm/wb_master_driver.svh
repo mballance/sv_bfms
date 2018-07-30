@@ -1,9 +1,30 @@
 
+typedef class wb_master_driver;
+class wb_master_api_impl `wb_master_plist extends wb_master_api;
+	
+	wb_master_driver `wb_master_params m_drv;
+	
+	task reset();
+		$display("reset: m_reset=%0d", m_drv.m_reset);
+		m_drv.m_reset = 1;
+		m_drv.m_reset_sem.put(1);
+	endtask
+		
+	task response(bit ERR);
+		if (m_drv.m_wait_resp) begin
+			m_drv.m_resp_err = ERR;
+			m_drv.m_resp_sem.put(1);
+		end else begin
+			$display("Warning: gratuitous response received");
+		end
+	endtask
+endclass
 
 class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item);
 	
 	typedef wb_master_driver `wb_master_params this_t;
 	typedef wb_master_config `wb_master_params cfg_t;
+	typedef wb_master_api_impl `wb_master_params api_t;
 	
 	`uvm_component_param_utils (this_t);
 
@@ -13,6 +34,11 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 	
 	cfg_t													m_cfg;
 	semaphore												m_sem = new(1);
+	semaphore												m_reset_sem = new(0);
+	bit														m_reset = 0;
+	semaphore												m_resp_sem = new(0);
+	bit														m_wait_resp;
+	bit														m_resp_err;
 	bit														m_big_endian = 1;
 	
 	function new(string name, uvm_component parent=null);
@@ -20,11 +46,16 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 	endfunction
 	
 	function void build_phase(uvm_phase phase);
+		api_t api;
 		super.build_phase(phase);
 		
 		ap = new("ap", this);
 		
+		api = new();
+		api.m_drv = this;
+		
 		m_cfg = cfg_t::get_config(this);
+		m_cfg.vif.m_api = api;
 	endfunction
 	
 	function void connect_phase(uvm_phase phase);
@@ -39,7 +70,13 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 	virtual task read32(input bit[31:0] addr, output bit[31:0] data);
 		cfg_t::vif_t vif = m_cfg.vif;
 		m_sem.get(1);
+		if (!m_reset) begin
+			m_reset_sem.get(1);
+		end
+		m_wait_resp = 1;
 		vif.wb_master_bfm_request(addr, 1, 1, 'hf, 0);
+		m_resp_sem.get(1);
+		m_wait_resp = 0;
 		vif.wb_master_bfm_get_data(0, data);
 		m_sem.put(1);
 	endtask
@@ -64,7 +101,15 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 		
 //		$display("read8: addr='h%08h mask='h%08h", addr, mask);
 		m_sem.get(1);
+		
+		if (!m_reset) begin
+			m_reset_sem.get(1);
+		end
+		
+		m_wait_resp = 1;
 		vif.wb_master_bfm_request(addr, 1, 1, mask, 0);
+		m_resp_sem.get(1);
+		m_wait_resp = 0;
 		vif.wb_master_bfm_get_data(0, data_tmp);
 //		$display("read8:   raw data='h%08h", data_tmp);
 		if (m_big_endian) begin
@@ -97,7 +142,15 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 		
 		$display("read16: addr='h%08h mask='h%08h", addr, mask);
 		m_sem.get(1);
+		
+		if (!m_reset) begin
+			m_reset_sem.get(1);
+		end
+		
+		m_wait_resp = 1;
 		vif.wb_master_bfm_request(addr, 1, 1, mask, 0);
+		m_resp_sem.get(1);
+		m_wait_resp = 0;
 		vif.wb_master_bfm_get_data(0, data_tmp);
 		$display("read16:   raw data='h%08h", data_tmp);
 		if (m_big_endian) begin
@@ -118,8 +171,15 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 	virtual task write32(input bit[31:0] addr, input bit[31:0] data);
 		cfg_t::vif_t vif = m_cfg.vif;
 		m_sem.get(1);
+		if (!m_reset) begin
+			m_reset_sem.get(1);
+		end
+		
+		m_wait_resp = 1;
 		vif.wb_master_bfm_set_data(0, data);
 		vif.wb_master_bfm_request(addr, 1, 1, 'hf, 1);
+		m_resp_sem.get(1);
+		m_wait_resp = 0;
 		m_sem.put(1);
 	endtask
 
@@ -146,8 +206,15 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 //				addr, data, data_tmp, mask);
 
 		m_sem.get(1);
+		
+		if (!m_reset) begin
+			m_reset_sem.get(1);
+		end
+		m_wait_resp = 1;
 		vif.wb_master_bfm_set_data(0, data_tmp);
 		vif.wb_master_bfm_request(addr, 1, 1, mask, 1);
+		m_resp_sem.get(1);
+		m_wait_resp = 0;
 		m_sem.put(1);
 	endtask
 
@@ -174,8 +241,14 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 						addr, data, data_tmp, mask);
 
 		m_sem.get(1);
+		if (!m_reset) begin
+			m_reset_sem.get(1);
+		end
+		m_wait_resp = 1;
 		vif.wb_master_bfm_set_data(0, data_tmp);
 		vif.wb_master_bfm_request(addr, 1, 1, mask, 1);
+		m_resp_sem.get(1);
+		m_wait_resp = 0;
 		m_sem.put(1);
 	endtask
 	

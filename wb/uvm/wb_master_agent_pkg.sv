@@ -8,6 +8,7 @@
 package wb_master_agent_pkg;
 	import uvm_pkg::*;
 	import sv_bfms_api_pkg::*;
+	import wb_master_api_pkg::*;
 
 	`include "wb_master_rw_api.svh"
 	`include "wb_master_config.svh"

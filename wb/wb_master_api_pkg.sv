@@ -12,11 +12,11 @@ package wb_master_api_pkg;
 `ifdef HAVE_HDL_VIRTUAL_INTERFACE
 	class wb_master_api;
 		
-		task reset();
+		virtual task reset();
 			// TODO:
 		endtask
 		
-		task response();
+		virtual task response(bit ERR);
 			// TODO:
 		endtask
 		
