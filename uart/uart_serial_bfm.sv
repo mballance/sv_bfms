@@ -33,13 +33,29 @@ endmodule
 
 interface uart_serial_bfm_core(input clk_i, input rst_i);
 	//pragma attribute uart_serial_bfm_core partition_interface_xif
+	
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
+	import uart_serial_api_pkg::*;
+`endif
 		
 	wire srx_pad_i;
+	
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
+	uart_serial_api		m_api;
+`else
+	int unsigned		m_id;
+	
+	import "DPI-C" context function int unsigned uart_serial_bfm_register(string path);
+	
+	initial begin
+		m_id = uart_serial_bfm_register($sformatf("%m"));
+	end
+`endif
+	
 		
 	bit clk_16x               = 0;
 	bit[15:0] clk_16x_divisor = ((50000000/115200)/16);
 	bit[15:0] clk_16x_cnt     = 0;
-	bit reset_done = 0;
 	bit reset_begin = 0;
 	
 	bit [1:0] n_stop_bits     = 1;
@@ -53,8 +69,9 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 			reset_begin <= 1;
 		end else begin
 			if (reset_begin) begin
-				reset_done <= 1;
+				send_reset();
 				reset_begin <= 0;
+				
 			end
 			if (clk_16x_cnt == clk_16x_divisor) begin
 				clk_16x_cnt <= 0;
@@ -70,7 +87,6 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 	bit[2:0]  rx_state = 0;
 	bit[3:0]  rx_bit_cnt = 0;
 	bit[7:0]  rx_data;
-	bit       rx_done;
 	bit[7:0]  rx_bits_received = 0;
 	bit       rx_data_sample = 0;
 	
@@ -82,7 +98,6 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 			rx_bit_cnt <= 0;
 			rx_data <= 0;
 			rx_bits_received <= 0;
-			rx_done <= 0;
 		end else begin
 			if (clk_16x) begin
 				case (rx_state)
@@ -128,15 +143,7 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 									rx_state <= 4;
 								end else begin
 									//									$display("Rx Done");
-									rx_done <= 1;
-									// Back to beginning
-									//									if (agent == null) begin
-									//										void'(uvm_config_db #(uart_serial_agent)::get(uvm_top,
-									//													$psprintf("%m"), uart_serial_config::report_id, agent));
-									//									end
-									//									if (agent != null) begin
-									//										agent.recv(rx_data);
-									//									end
+									rx_done(rx_data);
 									rx_state <= 0;
 								end
 							end else begin
@@ -182,16 +189,15 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 	bit[2:0]  tx_state = 0;
 	bit[3:0]  tx_bit_cnt = 0;
 	bit[7:0]  tx_data;
+	bit[7:0]  tx_data_i;
 	bit[7:0]  tx_bits_transmitted = 0;
 	bit       tx_data_sample = 0;
 	bit       tx_start = 0;
-	bit       tx_done = 0;
 	bit       stx_pad_r = 1;
 	
 	always @(posedge clk_i) begin
 		if (rst_i == 1) begin
-			tx_start <= 0;
-			tx_done <= 0;
+			tx_start = 0;
 			stx_pad_r <= 1;
 		end else begin
 			if (clk_16x) begin
@@ -202,7 +208,8 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 							tx_state <= 1;
 							stx_pad_r <= 0;
 							tx_bit_cnt <= 0;
-							tx_start <= 0;
+							tx_start = 0;
+							tx_data <= tx_data_i;
 						end
 					end
 				
@@ -243,7 +250,7 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 					4: begin
 						if (tx_bit_cnt == 15) begin
 							//							$display("%t: End stop bit", $time);
-							tx_done <= 1;
+							tx_done();
 							tx_state <= 0;
 						end
 						tx_bit_cnt <= tx_bit_cnt + 1;
@@ -253,68 +260,55 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 			end
 		end
 	end		
+	
+`ifndef HAVE_HDL_VIRTUAL_INTERFACE
+	import "DPI-C" task uart_serial_bfm_reset(int unsigned id);
+`endif
+	
+	task send_reset();
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
+		m_api.reset();
+`else
+		uart_serial_bfm_reset(m_id);
+`endif
+	endtask
 		
 	task uart_serial_bfm_do_tx(input byte unsigned data);
-`ifdef UNDEFINED
-		
-		// Ensure we do a reset
-		while (reset_done == 0) begin
-			@(posedge clk_i);
-		end
-		
 		// Now, do transmit
-		tx_data = data;
+		tx_data_i = data;
 		tx_start = 1;
-		tx_done = 0;
-		
-		while (tx_done == 0) begin
-			@(posedge clk_i);
-		end
-`endif		
 	endtask
-	
-	task automatic uart_serial_bfm_do_rx(
-		output byte unsigned 	data, 
-		output byte unsigned 	valid, 
-		input int 				timeout=-1);
-`ifdef UNDEFINED
-		int count = 0;
-		// Ensure we do a reset
-		while (reset_done == 0) begin
-			@(posedge clk_i);
-		end
-
-		while (rx_done == 0) begin
-			@(posedge clk_i);
-			if (timeout != -1 && ++count > timeout) begin
-				break;
-			end
-		end
-		
-		valid = rx_done;
-		rx_done = 0;
-		
-		// Wait for data to be available
-		data = rx_data;
+`ifndef HAVE_HDL_VIRTUAL_INTERFACE
+	export "DPI-C" task uart_serial_bfm_do_tx;
 `endif
-	endtask	
 	
-	task automatic uart_serial_bfm_wait_for_rx(input int byte_time);
-`ifdef UNDEFINED
-		while (reset_done == 0) begin
-			@(posedge clk_i);
-		end
-
-		repeat (byte_time * 10 * 16) begin // 10 bits per byte ; 16 clocks per bit
-			while (clk_16x == 1) @(posedge clk_i);
-			
-			while (clk_16x == 0) @(posedge clk_i);
-		end
+`ifndef HAVE_HDL_VIRTUAL_INTERFACE
+	import "DPI-C" task uart_serial_bfm_rx_done(int unsigned id, byte unsigned d);
+`endif
+	task rx_done(byte unsigned d);
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
+		m_api.rx_done(d);
+`else
+		uart_serial_bfm_rx_done(m_id, d);
 `endif
 	endtask
 		
+`ifndef HAVE_HDL_VIRTUAL_INTERFACE
+	import "DPI-C" task uart_serial_bfm_tx_done(int unsigned id);
+`endif
+	task tx_done();
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
+		m_api.tx_done();
+`else
+		uart_serial_bfm_tx_done(m_id);
+`endif
+	endtask
+	
 	task uart_serial_bfm_set_clkdiv(bit[15:0] div);
 		clk_16x_divisor = div;
 	endtask
+`ifndef HAVE_HDL_VIRTUAL_INTERFACE
+	export "DPI-C" task uart_serial_bfm_set_clkdiv;
+`endif
 		
 endinterface
