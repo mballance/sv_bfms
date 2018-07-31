@@ -1,4 +1,24 @@
 
+typedef class uart_serial_driver;
+typedef class uart_serial_agent;
+
+class uart_serial_api_impl extends uart_serial_api `uart_serial_plist;
+	uart_serial_driver `uart_serial_params  m_drv;
+	uart_serial_monitor `uart_serial_params m_monitor;
+	
+	virtual task reset();
+		m_drv.reset();
+	endtask
+		
+	virtual task tx_done();
+		m_drv.tx_done();
+	endtask
+		
+	virtual task rx_done(byte unsigned data);
+		m_monitor.rx_done(data);
+	endtask
+	
+endclass
 
 /**
  * Class: uart_serial_agent
@@ -15,16 +35,17 @@ class uart_serial_agent `uart_serial_plist extends uvm_agent;
 	typedef uart_serial_config `uart_serial_params 	cfg_t;
 	typedef uart_serial_monitor `uart_serial_params	mon_t;
 
-	drv_t													m_driver;
+	drv_t											m_driver;
 	uvm_sequencer #(uart_serial_seq_item)			m_seqr;
-	mon_t													m_monitor;
-	
+	mon_t											m_monitor;
+
 	uvm_analysis_port #(uart_serial_seq_item)		m_mon_out_ap;
 	uvm_analysis_port #(uart_serial_seq_item)		m_drv_out_ap;
 	
-	cfg_t													m_cfg;
+	cfg_t											m_cfg;
 	
 	uart_serial_seq_item							m_recv_item;
+	uart_serial_api_impl `uart_serial_params		m_api_impl;
 	
 	class recv_monitor extends uvm_subscriber #(uart_serial_seq_item);
 		mailbox #(byte unsigned)		mbox = new();
@@ -83,6 +104,13 @@ class uart_serial_agent `uart_serial_plist extends uvm_agent;
 			m_recv_monitor = new("m_recv_monitor", this);
 		end
 		
+		m_api_impl = new();
+		m_api_impl.m_drv = m_driver;
+		m_api_impl.m_monitor = m_monitor;
+		m_cfg.vif.m_api = m_api_impl;
+		
+		$display("m_cfg.vif.m_api=%p", m_cfg.vif.m_api);
+		
 	endfunction
 
 	function void connect_phase(uvm_phase phase);
@@ -117,13 +145,8 @@ class uart_serial_agent `uart_serial_plist extends uvm_agent;
 		output bit valid, 
 		input int timeout=-1);
 		
-		for (int i=0; i<timeout || timeout == -1; i++) begin
-			if (m_recv_monitor.mbox.try_get(data)) begin
-				valid = 1;
-				break;
-			end
-			m_cfg.vif.uart_serial_bfm_wait_for_rx(1);
-		end
+		// TODO: handle timeout
+		m_recv_monitor.mbox.get(data);
 	endtask
 	
 	task recv(bit[7:0] data);

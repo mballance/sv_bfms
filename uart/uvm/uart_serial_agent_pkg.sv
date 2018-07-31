@@ -7,6 +7,7 @@
 
 package uart_serial_agent_pkg;
 	import uvm_pkg::*;
+	import uart_serial_api_pkg::*;
 
 	`include "uart_serial_config.svh"
 	`include "uart_serial_seq_item.svh"

@@ -67,11 +67,10 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 			clk_16x_cnt <= 0;
 			clk_16x <= 0;
 			reset_begin <= 1;
-		end else begin
+		end else if (rst_i == 0) begin
 			if (reset_begin) begin
 				send_reset();
 				reset_begin <= 0;
-				
 			end
 			if (clk_16x_cnt == clk_16x_divisor) begin
 				clk_16x_cnt <= 0;
@@ -266,6 +265,7 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 `endif
 	
 	task send_reset();
+		$display("UART BFM: m_api=%p", m_api);
 `ifdef HAVE_HDL_VIRTUAL_INTERFACE
 		m_api.reset();
 `else

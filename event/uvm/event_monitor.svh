@@ -1,17 +1,16 @@
 
 
-class uart_serial_monitor `uart_serial_plist extends uvm_monitor;
+class event_monitor `event_plist extends uvm_monitor;
 
-	uvm_analysis_port #(uart_serial_seq_item)			ap;
+	uvm_analysis_port #(event_seq_item)			ap;
 
-	typedef uart_serial_monitor `uart_serial_params this_t;
-	typedef uart_serial_config `uart_serial_params  cfg_t;
-	
-	uart_serial_seq_item m_item = uart_serial_seq_item::type_id::create("item");
+	typedef event_monitor `event_params this_t;
+	typedef event_config `event_params  cfg_t;
+	typedef event_seq_item `event_params item_t;
 	
 	cfg_t									m_cfg;
 	
-	const string report_id = "uart_serial_monitor";
+	const string report_id = "event_monitor";
 	
 	`uvm_component_param_utils(this_t)
 	
@@ -34,10 +33,17 @@ class uart_serial_monitor `uart_serial_plist extends uvm_monitor;
 		super.connect_phase(phase);
 	endfunction
 	
-	task rx_done(byte unsigned data);
-		m_item.data = data;
-		ap.write(m_item);
+	virtual task event_update(longint unsigned v);
+		item_t item = item_t::type_id::create();
+		item.m_value = v;
+		
+		ap.write(item);
 	endtask
+	
+	task run_phase(uvm_phase phase);
+		// TODO: implement event_monitor run_phase
+	endtask
+	
 	
 endclass
 
