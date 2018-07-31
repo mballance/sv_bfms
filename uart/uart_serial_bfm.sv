@@ -265,8 +265,8 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 `endif
 	
 	task send_reset();
-		$display("UART BFM: m_api=%p", m_api);
 `ifdef HAVE_HDL_VIRTUAL_INTERFACE
+		$display("UART BFM: m_api=%p", m_api);
 		m_api.reset();
 `else
 		uart_serial_bfm_reset(m_id);
