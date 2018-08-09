@@ -258,6 +258,12 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 		bit[31:0] data_tmp;
 		bit[31:0] addr;
 		
+		$display("--> run_phase: wait for reset");
+		if (!m_reset) begin
+			m_reset_sem.get(1);
+		end
+		$display("<-- run_phase: wait for reset");
+		
 		forever begin
 			cfg_t::vif_t vif = m_cfg.vif;
 			
@@ -267,7 +273,7 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 			data_tmp = item.data;
 			addr = item.addr;
 			m_sem.get(1);
-			
+		
 			case (item.size)
 				1: begin
 					if (m_big_endian) begin
@@ -287,10 +293,13 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 					mask = 'hf;
 				end
 			endcase
-	
+
+			m_wait_resp = 1;
 			vif.wb_master_bfm_set_data(0, data_tmp);
 			vif.wb_master_bfm_request(addr, 1, 1, mask, 
 					item.is_write);
+			m_resp_sem.get(1);
+			m_wait_resp = 0;
 	
 			if (!item.is_write) begin
 				vif.wb_master_bfm_get_data(0, data_tmp);

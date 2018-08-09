@@ -16,6 +16,7 @@ package wb_master_agent_pkg;
 	`include "wb_master_driver.svh"
 	`include "wb_master_monitor.svh"
 	`include "wb_master_seq_base.svh"
+	`include "wb_master_reg_adapter.svh"
 	`include "wb_master_agent.svh"
 endpackage
 

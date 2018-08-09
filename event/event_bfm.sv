@@ -20,7 +20,7 @@ module event_bfm #(parameter int WIDTH=32) (
 
 	generate
 		if (WIDTH < 64) begin
-			assign u_core.ev = {{(64-WIDTH){0}}, ev};
+			assign u_core.ev = {{(64-WIDTH){1'b0}}, ev};
 		end else begin
 			assign u_core.ev = ev;
 		end
@@ -57,6 +57,7 @@ interface event_bfm_core(
 			ev_r <= 0;
 			reset_begin <= 1;
 		end else begin
+			reset_begin <= 0;
 			if (reset_begin || ev != ev_r) begin
 				event_update();
 				ev_r <= ev;

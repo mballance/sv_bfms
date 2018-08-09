@@ -4,6 +4,9 @@
 -f ${SV_BFMS}/api/sv/sv_dpi.f
 -f ${SV_BFMS}/utils/sv/sv.f
 
+-f ${SV_BFMS}/event/event.f
+-f ${SV_BFMS}/event/uvm/uvm.f
+
 -f ${SV_BFMS}/generic_rom/uvm/uvm.f
 
 -f ${SV_BFMS}/generic_rom/sv.f

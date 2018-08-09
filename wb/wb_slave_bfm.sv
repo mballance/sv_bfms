@@ -87,15 +87,15 @@ interface wb_slave_bfm_core #(
 		);
 		
 //		// Ensure we wait for reset
-//		while (reset_done == 0) begin
-//			@(posedge clk);
-//		end
+		while (reset_done == 0) begin
+			@(posedge clk);
+		end
 	
 //		// Wait for a request
-//		do begin
-//			@(posedge clk);
-//		end while (req == 0);
-//		req=0;
+		do begin
+			@(posedge clk);
+		end while (req == 0);
+		req=0;
 		
 		ADR = ADR_rs;
 		SEL = SEL_rs;

@@ -1,8 +1,8 @@
 
 `include "uvm_macros.svh"
 
-`define event_plist  #(parameter int T=0)
-`define event_params #(T)
+`define event_plist
+`define event_params
 `define event_vif_t virtual event_bfm_core 
 
 package event_agent_pkg;
