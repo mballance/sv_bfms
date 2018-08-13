@@ -10,11 +10,24 @@
 			<arguments>
 			</arguments>
 		</buildCommand>
+		<buildCommand>
+			<name>net.sf.sveditor.core.SVProjectBuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
 	</buildSpec>
 	<natures>
 		<nature>org.scala-ide.sdt.core.scalanature</nature>
 		<nature>org.eclipse.jdt.core.javanature</nature>
+		<nature>net.sf.sveditor.core.SVNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>External SV Files</name>
+			<type>2</type>
+			<locationURI>svext://sv_bfms</locationURI>
+		</link>
+	</linkedResources>
 	<variableList>
 		<variable>
 			<name>STD_PROTOCOL_IF</name>
@@ -23,6 +36,10 @@
 		<variable>
 			<name>SV_BFMS</name>
 			<value>$%7BPROJECT_LOC%7D</value>
+		</variable>
+		<variable>
+			<name>UVMDEV</name>
+			<value>$%7BPACKAGES_DIR%7D/uvmdev</value>
 		</variable>
 	</variableList>
 </projectDescription>

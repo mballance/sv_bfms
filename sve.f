@@ -1,4 +1,10 @@
 
++incdir+${UVM_HOME}/src
+${UVM_HOME}/src/uvm_pkg.sv
+
++incdir+${UVMDEV}/src
+${UVMDEV}/src/uvmdev_pkg.sv
+
 +incdir+${SV_BFMS}/api/sv
 -f ${SV_BFMS}/api/sv/sv.f
 -f ${SV_BFMS}/api/sv/sv_dpi.f
@@ -20,6 +26,7 @@ ${SV_BFMS}/generic_sram_line_en_master/generic_sram_line_en_master_bfm.sv
 ${SV_BFMS}/hella_cache_master/hella_cache_master_bfm.sv
 
 -f ${SV_BFMS}/uart/uvm/uvm.f
+-f ${SV_BFMS}/uart/uvm/uart_agent_dev/uart_agent_dev.f
 -f ${SV_BFMS}/uart/sv.f
 
 -f ${SV_BFMS}/wb/wb.f
