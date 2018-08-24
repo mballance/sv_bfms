@@ -60,7 +60,6 @@ class uart_serial_agent `uart_serial_plist extends uvm_agent;
 		 * Override from class 
 		 */
 		function void write(input uart_serial_seq_item t);
-			$display("-- write %0d", t.data);
 			void'(mbox.try_put(t.data));
 		endfunction
 		
@@ -148,7 +147,8 @@ class uart_serial_agent `uart_serial_plist extends uvm_agent;
 		// TODO: handle timeout
 		m_recv_monitor.mbox.get(data);
 	endtask
-	
+
+	// Internal method
 	task recv(bit[7:0] data);
 		m_recv_item.data = data;
 		m_mon_out_ap.write(m_recv_item);
