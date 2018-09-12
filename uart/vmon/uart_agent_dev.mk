@@ -9,7 +9,7 @@ VMON_UART_AGENT_SRC = $(notdir $(wildcard $(VMON_UART_AGENT_CSRC_DIR)/*.c))
 
 else # Rules
 
-libvmon_uart_agent.o : $(VMON_UART_AGENT_SRC:.c=.o)
+libuart_agent_dev.o : $(VMON_UART_AGENT_SRC:.c=.o)
 	$(Q)$(LD) -r -o $@ $(VMON_UART_AGENT_SRC:.c=.o)
 
 endif

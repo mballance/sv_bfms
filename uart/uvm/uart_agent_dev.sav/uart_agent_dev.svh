@@ -7,17 +7,14 @@
  * 
  * TODO: Add class documentation
  */
-class uart_agent_dev extends uvm_object implements uvmdev_if;
+class uart_agent_dev extends uvm_object implements uvmdev_if, vmon_client_ep_if;
 	`uvm_object_utils(uart_agent_dev)
 	
 	uart_serial_agent			m_agent;
 	uvmdev_mem_if				m_mem_if;
-	int							m_stream;
 
 	virtual task init(uvmdev_mgr mgr, int unsigned id);
 		uvm_object		dev_data;
-		
-		m_stream = $create_transaction_stream($sformatf("uart_agent_dev(%0d)", id));
 		
 		dev_data = mgr.get_dev_data(id);
 		m_mem_if = mgr.get_mem_if();
@@ -27,57 +24,65 @@ class uart_agent_dev extends uvm_object implements uvmdev_if;
 		end
 	endtask
 	
-	task tx(int unsigned seed, int unsigned bytes);
+	task tx(int unsigned seed, int unsigned bytes, int stride=1);
 		uart_serial_tx_seq	tx_seq = uart_serial_tx_seq::type_id::create();
-		int th = $begin_transaction(m_stream, "tx");
-		$add_attribute(th, seed, "seed");
-		$add_attribute(th, bytes, "bytes");
 
 		tx_seq.data.push_back(0);
 		
 		for (int i=0; i<bytes; i++) begin
-			int th_b = $begin_transaction(m_stream, $sformatf("byte %0d", i),, th);
 			seed ^= (seed << 13);
 			seed ^= (seed >> 17);
 			seed ^= (seed << 5);
 			
-			$add_attribute(th_b, seed, "data");
 			tx_seq.data[0] = seed;
 			tx_seq.start(m_agent.m_seqr);
-			$end_transaction(th_b);
-			$free_transaction(th_b);
 		end
-		$end_transaction(th);
-		$free_transaction(th);
 	endtask
 	
-	task rx(int unsigned seed, int unsigned bytes);
+	task rx(int unsigned seed, int unsigned bytes, int stride=1);
 		byte unsigned data;
 		bit valid;
-		int th = $begin_transaction(m_stream, "rx");
-		$add_attribute(th, seed, "seed");
-		$add_attribute(th, bytes, "bytes");
 	
 		$display("--> agent.rx bytes=%0d", bytes);
-		for (int i=0; i<bytes; i++) begin
-			int th_b = $begin_transaction(m_stream, $sformatf("byte %0d", i),, th);
+		for (int i=0; i<bytes; i+=stride) begin
 			seed ^= (seed << 13);
 			seed ^= (seed >> 17);
 			seed ^= (seed << 5);
+			for (int j=1; j<stride; j++) begin
+				// Skip bytes that we won't see
+				seed ^= (seed << 13);
+				seed ^= (seed >> 17);
+				seed ^= (seed << 5);
+			end
 			m_agent.getc(data, valid);
-			$add_attribute(th_b, data, "data");
 			
 			if (data != (seed & 'hff)) begin
 				`uvm_error(get_name(), $sformatf("Data receive failed ; expected 'h%02h ; received 'h%02h",
 						(seed & 'hff), data));
 			end
-			$end_transaction(th_b);
-			$free_transaction(th_b);
 		end
-		$end_transaction(th);
-		$free_transaction(th);
 		$display("<-- agent.rx bytes=%0d", bytes);
 	endtask
+
+	// VMON message processing function
+	virtual function void process_msg(byte unsigned ep, vmon_databuf data);
+		int i=4; // First part of the message is the device id
+		byte unsigned op = data.get8();
+		int unsigned seed = data.get32();
+		int unsigned sz = data.get32();
+		
+		if (op == 0) begin
+			fork
+				rx(seed, sz);
+			join_none
+		end else if (op == 1) begin
+			fork
+				tx(seed, sz);
+			join_none
+		end else begin
+			$display("uart_agent_dev: unknown operation %0d", op);
+		end
+	endfunction
 
 endclass
 
@@ -130,10 +135,10 @@ endtask
 /**
  * uart_agent_dev_tx(seed, sz)
  */
-`uvmdev_task_decl_2(uart_agent_dev, tx, uint32_t, uint32_t)
+`uvmdev_task_decl_3(uart_agent_dev, tx, uint32_t, uint32_t, uint32_t)
 
 /**
  * uart_agent_dev_rx(seed, sz)
  */
-`uvmdev_task_decl_2(uart_agent_dev, rx, uint32_t, uint32_t)
+`uvmdev_task_decl_3(uart_agent_dev, rx, uint32_t, uint32_t, uint32_t)
 

@@ -1,11 +1,11 @@
 
 
-class generic_sram_byte_en_monitor #(parameter int ADDRESS_WIDTH=7, parameter int DATA_WIDTH=32) extends uvm_monitor;
+class generic_sram_byte_en_monitor `GENERIC_SRAM_BYTE_EN_PLIST extends uvm_monitor;
 
 	uvm_analysis_port #(generic_sram_byte_en_seq_item)			ap;
 
-	typedef generic_sram_byte_en_monitor #(ADDRESS_WIDTH,DATA_WIDTH) this_t;
-	typedef generic_sram_byte_en_config #(ADDRESS_WIDTH,DATA_WIDTH) cfg_t;
+	typedef generic_sram_byte_en_monitor `GENERIC_SRAM_BYTE_EN_PARAMS this_t;
+	typedef generic_sram_byte_en_config `GENERIC_SRAM_BYTE_EN_PARAMS cfg_t;
 	
 	cfg_t									m_cfg;
 	

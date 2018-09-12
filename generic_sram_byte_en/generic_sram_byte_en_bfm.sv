@@ -51,115 +51,132 @@ interface `GENERIC_SRAM_BYTE_EN_BFM_NAME #(
 	input                           i_clk,
 	input      [DATA_WIDTH-1:0]     i_write_data,
 	input                           i_write_enable,
-	input							i_read_enable,
 	input      [ADDRESS_WIDTH-1:0]  i_address,
 	input      [DATA_WIDTH/8-1:0]   i_byte_enable,
 	output reg [DATA_WIDTH-1:0]     o_read_data
 );                                                     
 
-reg [DATA_WIDTH-1:0]   mem  [(2**ADDRESS_WIDTH)-1:0];
-reg                    init [(2**ADDRESS_WIDTH)-1:0];
-integer i;
-localparam OFFSET_HIGH_BIT = (ADDRESS_WIDTH + $clog2(DATA_WIDTH) - 1);
-localparam OFFSET_LOW_BIT = ($clog2(DATA_WIDTH/8));
-localparam report_uninit = 0;
+    reg [DATA_WIDTH-1:0]   mem  [(2**ADDRESS_WIDTH)-1:0];
+    integer i;
+    localparam OFFSET_HIGH_BIT = (ADDRESS_WIDTH + $clog2(DATA_WIDTH) - 1);
+    localparam OFFSET_LOW_BIT = ($clog2(DATA_WIDTH/8));
 
-initial begin
-	$display("OFFSET_HIGH_BIT=%0d OFFSET_LOW_BIT=%0d",
-			OFFSET_HIGH_BIT, OFFSET_LOW_BIT);
-	for (i=0; i<(2**ADDRESS_WIDTH); i++) begin
-		init[i] = 0;
-	end
-end
+    initial begin
+	    $display("SRAM %m: OFFSET_HIGH_BIT=%0d OFFSET_LOW_BIT=%0d",
+    			OFFSET_HIGH_BIT, OFFSET_LOW_BIT);
+	    
+	    u_core.mem = new[(2**ADDRESS_WIDTH)*(DATA_WIDTH/8)];
+    end
 
-always @(posedge i_clk) begin
-    // read
-    o_read_data <= i_write_enable ? {DATA_WIDTH{1'd0}} : mem[i_address];
+    generic_sram_byte_en_bfm_core u_core ();
+    assign u_core.mem_size = (2**ADDRESS_WIDTH)*(DATA_WIDTH/8);
     
-    // write
-    if (i_write_enable) begin
-        for (i=0;i<DATA_WIDTH/8;i=i+1) begin
-            mem[i_address][i*8+0] <= i_byte_enable[i] ? i_write_data[i*8+0] : mem[i_address][i*8+0] ;
-            mem[i_address][i*8+1] <= i_byte_enable[i] ? i_write_data[i*8+1] : mem[i_address][i*8+1] ;
-            mem[i_address][i*8+2] <= i_byte_enable[i] ? i_write_data[i*8+2] : mem[i_address][i*8+2] ;
-            mem[i_address][i*8+3] <= i_byte_enable[i] ? i_write_data[i*8+3] : mem[i_address][i*8+3] ;
-            mem[i_address][i*8+4] <= i_byte_enable[i] ? i_write_data[i*8+4] : mem[i_address][i*8+4] ;
-            mem[i_address][i*8+5] <= i_byte_enable[i] ? i_write_data[i*8+5] : mem[i_address][i*8+5] ;
-            mem[i_address][i*8+6] <= i_byte_enable[i] ? i_write_data[i*8+6] : mem[i_address][i*8+6] ;
-            mem[i_address][i*8+7] <= i_byte_enable[i] ? i_write_data[i*8+7] : mem[i_address][i*8+7] ;
-        end            
-		init[i_address] = 1;
-    end else begin
-    	if (report_uninit && init[i_address] == 0 && i_address != 0) begin
-    		$display("%m: Address 'h%08h uninitialized @ %t", 
-    				(i_address << OFFSET_LOW_BIT), $time);
+    always @(posedge i_clk) begin
+    	// read
+   		automatic bit[DATA_WIDTH-1:0] rdata = 0;
+   		automatic bit[ADDRESS_WIDTH+$clog2(DATA_WIDTH/8)-1:0] addr = {i_address, {$clog2(DATA_WIDTH/8){1'b0}}};
+    		
+   		for (int i=DATA_WIDTH/8-1; i>=0; i--) begin
+   			rdata <<= 8;
+   			rdata |= u_core.mem[addr+i];
+   		end
+   		o_read_data <= i_write_enable ? {DATA_WIDTH{1'd0}} : rdata;
+    
+    	// write
+    	if (i_write_enable == 1) begin
+    		automatic bit[ADDRESS_WIDTH+$clog2(DATA_WIDTH/8)-1:0] addr = {i_address, {$clog2(DATA_WIDTH/8){1'b0}}};
+    		
+    		for (i=0; i<DATA_WIDTH/8; i++) begin
+    			if (i_byte_enable[i]) begin
+    				$display("Write: 'h%08h <= 'h%02h", 
+    						addr+i, ((i_write_data >> 8*i) & 'hff));
+    				u_core.mem[addr+i] = (i_write_data >> 8*i);
+    			end
+    		end            
     	end
     end
-end
     
-    task generic_sram_byte_en_write8(
-    	longint unsigned	offset,
-    	int unsigned 		data);
-    	automatic bit[DATA_WIDTH-1:0] tmp = mem[offset[OFFSET_HIGH_BIT:OFFSET_LOW_BIT]];
-    	tmp &= ~('hff << 8*(DATA_WIDTH/8-offset[OFFSET_LOW_BIT-1:0]-1));
-    	tmp |= (data << 8*(DATA_WIDTH/8-offset[OFFSET_LOW_BIT-1:0]-1));
-    	mem[offset[OFFSET_HIGH_BIT:OFFSET_LOW_BIT]] = tmp;
-    endtask
-    export "DPI-C" task generic_sram_byte_en_write8;
-    
-    task generic_sram_byte_en_write16(
-    	longint unsigned 	offset,
-    	int unsigned 		data);
-    	mem[offset] = data;
-    endtask
-    export "DPI-C" task generic_sram_byte_en_write16;
-    
-    task generic_sram_byte_en_write32(
-    	longint unsigned	offset,
-    	int unsigned 		data);
-    	if (offset[OFFSET_HIGH_BIT:OFFSET_LOW_BIT] < (2**ADDRESS_WIDTH)-1) begin
-//    		$display("WRITE: mem['h%04h] = 'h%08h", 
-//    				offset[OFFSET_HIGH_BIT:OFFSET_LOW_BIT], data);
-	    	mem[offset[OFFSET_HIGH_BIT:OFFSET_LOW_BIT]] = data;
-    	end else begin
-    		$display("Error: ram(32)[%0d] = 'h%08h (offset='h%08h)", 
-    				offset[OFFSET_HIGH_BIT:OFFSET_LOW_BIT], data, offset);
-    	end
-    endtask
-    export "DPI-C" task generic_sram_byte_en_write32;
-	
-    task generic_sram_byte_en_read32(
-    	longint unsigned	offset,
-    	output int unsigned data);
-    	data = mem[offset[OFFSET_HIGH_BIT:OFFSET_LOW_BIT]];
-//    	$display("READ: mem['h%04h] = 'h%08h", 
-//    			offset[OFFSET_HIGH_BIT:OFFSET_LOW_BIT], data);
-    endtask
-    export "DPI-C" task generic_sram_byte_en_read32;
-    
-    task generic_sram_byte_en_read16(
-    	longint unsigned 	offset,
-    	output int unsigned data);
-    	data = mem[offset];
-    endtask
-    export "DPI-C" task generic_sram_byte_en_read16;
-    
-    task generic_sram_byte_en_read8(
-    	longint unsigned 	offset,
-    	output int unsigned data);
-    	automatic bit[DATA_WIDTH-1:0] tmp = mem[offset[OFFSET_HIGH_BIT:OFFSET_LOW_BIT]];
-    	data = ((tmp >> 8*((DATA_WIDTH/8)-offset[OFFSET_LOW_BIT-1:0]-1)) & 'hFF);
-    endtask
-    export "DPI-C" task generic_sram_byte_en_read8;
+endinterface
 
-`ifdef SV_BFMS_EN_DPI
-    import "DPI-C" context task generic_sram_byte_en_register();
+interface generic_sram_byte_en_bfm_core;
+	bit[7:0]			mem[];
+	wire[31:0]			mem_size;
+	reg                 little_endian = 1;
+
+	task generic_sram_byte_en_bfm_write8(
+		longint unsigned	offset,
+		int unsigned 		data);
+		mem[offset] = data;
+		$display("-- write8 'h%08h='h%02h ('h%02h)", offset, data, mem[offset]);
+	endtask
     
-    initial begin
-    	generic_sram_byte_en_register();
-    end    
-`endif
+	task generic_sram_byte_en_bfm_write16(
+		longint unsigned 	offset,
+		int unsigned 		data);
+		if (little_endian) begin
+			for (int i=0; i<2; i++) begin
+				mem[offset+i] = data >> 8*i;
+			end
+		end else begin
+			for (int i=0; i<2; i++) begin
+				mem[offset+2-i-1] = data >> 8*i;
+			end
+		end
+	endtask
     
+	task generic_sram_byte_en_bfm_write32(
+		longint unsigned	offset,
+		int unsigned 		data);
+		if (little_endian) begin
+			for (int i=0; i<4; i++) begin
+				mem[offset+i] = data >> 8*i;
+			end
+		end else begin
+			for (int i=0; i<4; i++) begin
+				mem[offset+4-i-1] = data >> 8*i;
+			end
+		end
+	endtask
+	
+	task generic_sram_byte_en_bfm_read32(
+		longint unsigned	offset,
+		output int unsigned data);
+		data = 0;
+		if (little_endian) begin
+			for (int i=0; i<4; i++) begin
+				data <<= 8;
+				data |= mem[offset+i];
+			end
+		end else begin
+			for (int i=3; i>=0; i--) begin
+				data <<= 8;
+				data |= mem[offset+i];
+			end
+		end
+	endtask
+    
+	task generic_sram_byte_en_bfm_read16(
+		longint unsigned 	offset,
+		output int unsigned data);
+		data = 0;
+		if (little_endian) begin
+			for (int i=0; i<2; i++) begin
+				data <<= 8;
+				data |= mem[offset+i];
+			end
+		end else begin
+			for (int i=1; i>=0; i--) begin
+				data <<= 8;
+				data |= mem[offset+i];
+			end
+		end
+	endtask
+    
+	task generic_sram_byte_en_bfm_read8(
+		longint unsigned 	offset,
+		output int unsigned data);
+		data = mem[offset];
+	endtask
 
 endinterface
 

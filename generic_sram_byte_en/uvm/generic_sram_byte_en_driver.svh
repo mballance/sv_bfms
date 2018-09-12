@@ -1,9 +1,9 @@
 
 
-class generic_sram_byte_en_driver #(parameter int ADDRESS_WIDTH=7, parameter int DATA_WIDTH=32) extends uvm_driver #(generic_sram_byte_en_seq_item);
+class generic_sram_byte_en_driver `GENERIC_SRAM_BYTE_EN_PLIST extends uvm_driver #(generic_sram_byte_en_seq_item);
 	
-	typedef generic_sram_byte_en_driver #(ADDRESS_WIDTH,DATA_WIDTH) this_t;
-	typedef generic_sram_byte_en_config #(ADDRESS_WIDTH,DATA_WIDTH) cfg_t;
+	typedef generic_sram_byte_en_driver `GENERIC_SRAM_BYTE_EN_PARAMS this_t;
+	typedef generic_sram_byte_en_config `GENERIC_SRAM_BYTE_EN_PARAMS cfg_t;
 	
 	`uvm_component_param_utils (this_t);
 

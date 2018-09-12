@@ -3,18 +3,18 @@
 /**
  * Class: generic_sram_byte_en_agent
  */
-class generic_sram_byte_en_agent #(parameter int ADDRESS_WIDTH=7, parameter int DATA_WIDTH=32) extends uvm_agent;
+class generic_sram_byte_en_agent `GENERIC_SRAM_BYTE_EN_PLIST extends uvm_agent;
 	
-	typedef generic_sram_byte_en_agent #(ADDRESS_WIDTH,DATA_WIDTH) this_t;
+	typedef generic_sram_byte_en_agent `GENERIC_SRAM_BYTE_EN_PARAMS this_t;
 	typedef generic_sram_byte_en_rw_api `GENERIC_SRAM_BYTE_EN_PARAMS api_t;
 	`uvm_component_param_utils (this_t)
 
 
 	const string report_id = "generic_sram_byte_en_agent";
 	
-	typedef generic_sram_byte_en_driver #(ADDRESS_WIDTH,DATA_WIDTH) 	drv_t;
-	typedef generic_sram_byte_en_config #(ADDRESS_WIDTH,DATA_WIDTH) 	cfg_t;
-	typedef generic_sram_byte_en_monitor #(ADDRESS_WIDTH,DATA_WIDTH)	mon_t;
+	typedef generic_sram_byte_en_driver `GENERIC_SRAM_BYTE_EN_PARAMS 	drv_t;
+	typedef generic_sram_byte_en_config `GENERIC_SRAM_BYTE_EN_PARAMS 	cfg_t;
+	typedef generic_sram_byte_en_monitor `GENERIC_SRAM_BYTE_EN_PARAMS	mon_t;
 
 	drv_t													m_driver;
 	uvm_sequencer #(generic_sram_byte_en_seq_item)			m_seqr;
@@ -84,25 +84,25 @@ class generic_sram_byte_en_agent #(parameter int ADDRESS_WIDTH=7, parameter int 
 	virtual task write8(
 		bit[31:0]			addr,
 		bit[7:0]			data);
-		m_cfg.vif.generic_sram_byte_en_write8(addr, data);
+		m_cfg.vif.generic_sram_byte_en_bfm_write8(addr, data);
 	endtask
 	
 	virtual task read8(
 		bit[31:0]			addr,
 		output bit[7:0]		data);
-		m_cfg.vif.generic_sram_byte_en_read8(addr, data);
+		m_cfg.vif.generic_sram_byte_en_bfm_read8(addr, data);
 	endtask
 	
 	virtual task write32(
 		bit[31:0]			addr,
 		bit[31:0]			data);
-		m_cfg.vif.generic_sram_byte_en_write32(addr, data);
+		m_cfg.vif.generic_sram_byte_en_bfm_write32(addr, data);
 	endtask
 	
 	virtual task read32(
 		bit[31:0]			addr,
 		output bit[31:0]	data);
-		m_cfg.vif.generic_sram_byte_en_read32(addr, data);
+		m_cfg.vif.generic_sram_byte_en_bfm_read32(addr, data);
 	endtask
 	
 

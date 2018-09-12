@@ -4,12 +4,12 @@
  * Class: generic_sram_byte_en_config
  * Provides configuration information for agent generic_sram_byte_en
  */
-class generic_sram_byte_en_config #(parameter int ADDRESS_WIDTH=32, parameter int DATA_WIDTH=32) extends uvm_object;
+class generic_sram_byte_en_config `GENERIC_SRAM_BYTE_EN_PLIST extends uvm_object;
 	
-	typedef generic_sram_byte_en_config #(ADDRESS_WIDTH, DATA_WIDTH) this_t;
+	typedef generic_sram_byte_en_config `GENERIC_SRAM_BYTE_EN_PARAMS this_t;
 	`uvm_object_param_utils (this_t)
 		
-	typedef virtual `GENERIC_SRAM_BYTE_EN_BFM_NAME #(ADDRESS_WIDTH, DATA_WIDTH) vif_t;
+	typedef virtual generic_sram_byte_en_bfm_core vif_t;
 	
 	vif_t				vif;
 	

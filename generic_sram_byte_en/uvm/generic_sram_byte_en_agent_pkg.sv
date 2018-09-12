@@ -1,8 +1,8 @@
 
 `include "uvm_macros.svh"
 
-`define GENERIC_SRAM_BYTE_EN_PLIST  #(parameter int ADDRESS_WIDTH=10, DATA_WIDTH=32)
-`define GENERIC_SRAM_BYTE_EN_PARAMS #(ADDRESS_WIDTH, DATA_WIDTH)
+`define GENERIC_SRAM_BYTE_EN_PLIST  
+`define GENERIC_SRAM_BYTE_EN_PARAMS
 
 `ifndef GENERIC_SRAM_BYTE_EN_BFM_NAME
 	`define GENERIC_SRAM_BYTE_EN_BFM_NAME generic_sram_byte_en_bfm
