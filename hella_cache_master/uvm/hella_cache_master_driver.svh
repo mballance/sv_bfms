@@ -1,7 +1,11 @@
 
 
 typedef class hella_cache_master_driver;
-class hella_cache_master_api_driver_proxy `hella_cache_master_plist extends hella_cache_master_api;
+class hella_cache_master_api_driver_proxy `hella_cache_master_plist 
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
+  extends hella_cache_master_api
+`endif
+;
 
 	hella_cache_master_driver `hella_cache_master_params driver;
 
@@ -65,7 +69,9 @@ class hella_cache_master_driver `hella_cache_master_plist
 		m_cfg = cfg_t::get_config(this);
 	
 		// Provide the callback path
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 		m_cfg.vif.api = m_proxy;
+`endif
 	endfunction
 	
 	function void connect_phase(uvm_phase phase);
@@ -193,7 +199,9 @@ class hella_cache_master_driver `hella_cache_master_plist
 	
 	task run_phase(uvm_phase phase);
 		seq_i_t		item;
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 		`hella_cache_master_vif_t vif = m_cfg.vif;
+`endif
 		
 //		fork
 //			rsp_thread();
@@ -222,9 +230,13 @@ class hella_cache_master_driver `hella_cache_master_plist
 			ap.write(item);
 
 			m_req_sem.get(1);
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 			vif.hella_cache_master_bfm_send_req(
 					item.addr, item.tag, item.cmd,
 					item.typ, item.data, item.data_mask);
+`else
+			`uvm_info(get_name(), "TODO: handle virtual interface", UVM_LOW);
+`endif
 			m_req_sem.put(1);
 			
 			seq_item_port.item_done();

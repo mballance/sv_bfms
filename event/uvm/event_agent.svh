@@ -2,6 +2,7 @@
 typedef class event_agent;
 typedef class event_monitor;
 
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 class event_api_impl `event_plist extends event_api;
 	event_monitor `event_params		m_monitor;
 	
@@ -9,6 +10,7 @@ class event_api_impl `event_plist extends event_api;
 		m_monitor.event_update(v);
 	endtask
 endclass
+`endif
 
 /**
  * Class: event_agent
@@ -33,8 +35,10 @@ class event_agent `event_plist extends uvm_agent;
 	uvm_analysis_port #(event_seq_item)		m_drv_out_ap;
 	
 	cfg_t													m_cfg;
-	
+
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 	event_api_impl `event_params							m_api;
+`endif
 	
 	function new(string name, uvm_component parent=null);
 		super.new(name, parent);
@@ -64,10 +68,12 @@ class event_agent `event_plist extends uvm_agent;
 			m_mon_out_ap = new("m_mon_out_ap", this);
 		end
 		
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 		m_api = new();
 		m_api.m_monitor = m_monitor;
 		
 		m_cfg.vif.m_api = m_api;
+`endif
 	endfunction
 
 	function void connect_phase(uvm_phase phase);

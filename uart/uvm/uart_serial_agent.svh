@@ -2,6 +2,7 @@
 typedef class uart_serial_driver;
 typedef class uart_serial_agent;
 
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 class uart_serial_api_impl extends uart_serial_api `uart_serial_plist;
 	uart_serial_driver `uart_serial_params  m_drv;
 	uart_serial_monitor `uart_serial_params m_monitor;
@@ -19,6 +20,7 @@ class uart_serial_api_impl extends uart_serial_api `uart_serial_plist;
 	endtask
 	
 endclass
+`endif
 
 /**
  * Class: uart_serial_agent
@@ -45,7 +47,9 @@ class uart_serial_agent `uart_serial_plist extends uvm_agent;
 	cfg_t											m_cfg;
 	
 	uart_serial_seq_item							m_recv_item;
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 	uart_serial_api_impl `uart_serial_params		m_api_impl;
+`endif
 	
 	class recv_monitor extends uvm_subscriber #(uart_serial_seq_item);
 		mailbox #(byte unsigned)		mbox = new();
@@ -103,12 +107,12 @@ class uart_serial_agent `uart_serial_plist extends uvm_agent;
 			m_recv_monitor = new("m_recv_monitor", this);
 		end
 		
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 		m_api_impl = new();
 		m_api_impl.m_drv = m_driver;
 		m_api_impl.m_monitor = m_monitor;
 		m_cfg.vif.m_api = m_api_impl;
-		
-		$display("m_cfg.vif.m_api=%p", m_cfg.vif.m_api);
+`endif
 		
 	endfunction
 
