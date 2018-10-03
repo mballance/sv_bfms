@@ -10,8 +10,13 @@ class wb_slave_config `wb_slave_plist extends uvm_object;
 	`uvm_object_param_utils (this_t)
 		
 	typedef `wb_slave_vif_t vif_t;
-	
+
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 	vif_t				vif;
+`else
+	string				path;
+	int unsigned		id;
+`endif
 	
 	static const string report_id = "wb_slave_config";
 	

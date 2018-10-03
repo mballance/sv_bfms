@@ -53,26 +53,26 @@ interface wb_master_bfm_core(
 	wire[31:0]					WB_ADDR_WIDTH;
 	wire[31:0]					WB_DATA_WIDTH;
 	
-	reg[WB_DATA_WIDTH_P-1:0]		write_data_buf;
-	reg[WB_DATA_WIDTH_P-1:0]		read_data_buf;
-	reg							req = 0;
+	longint unsigned				write_data_buf;
+	longint unsigned				read_data_buf;
+	reg								req = 0;
 	
 	reg[WB_ADDR_WIDTH_P-1:0]		ADR_r;
 	reg[WB_ADDR_WIDTH_P-1:0]		ADR_rs;
-	reg[2:0]					CTI_r;
-	reg[2:0]					CTI_rs;
-	reg[1:0]					BTE_r;
-	reg[1:0]					BTE_rs;
+	reg[2:0]						CTI_r;
+	reg[2:0]						CTI_rs;
+	reg[1:0]						BTE_r;
+	reg[1:0]						BTE_rs;
 	reg[WB_DATA_WIDTH_P-1:0]		DAT_W_rs;
-	reg							CYC_rs;
+	reg								CYC_rs;
 	reg[(WB_DATA_WIDTH_P/8)-1:0]	SEL_r;
 	reg[(WB_DATA_WIDTH_P/8)-1:0]	SEL_rs;
-	reg							STB_rs;
-	reg							WE_r;
-	reg							WE_rs;
+	reg								STB_rs;
+	reg								WE_r;
+	reg								WE_rs;
 	wire[WB_DATA_WIDTH_P-1:0]		DAT_R;
-	wire						ACK;
-	wire						ERR;
+	wire							ACK;
+	wire							ERR;
 
 
 	
@@ -163,17 +163,17 @@ interface wb_master_bfm_core(
 	task wb_master_bfm_set_data_hdl(
 		int unsigned				id,
 		int unsigned				idx,
-		int unsigned				data);
+		longint unsigned			data);
 		write_data_buf = data;
 	endtask
 `ifndef HAVE_HDL_VIRTUAL_INTERFACE
-		export "DPI-C" task wb_master_bfm_set_data_hdl;
+	export "DPI-C" task wb_master_bfm_set_data_hdl;
 `endif /* HAVE_HDL_VIRTUAL_INTERFACE */
 	
 	task wb_master_bfm_get_data_hdl(
 		input int unsigned				id,
 		input int unsigned				idx,
-		output int unsigned				data);
+		output longint unsigned			data);
 		data = read_data_buf;
 	endtask
 `ifndef HAVE_HDL_VIRTUAL_INTERFACE
