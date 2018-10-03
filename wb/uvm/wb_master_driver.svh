@@ -84,7 +84,7 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 		int unsigned				idx,
 		longint unsigned			data);
 `ifdef HAVE_HDL_VIRTUAL_INTERFACE
-		m_cfg.vif.wb_master_bfm_set_data(idx, data);
+		m_cfg.vif.wb_master_bfm_set_data_hdl(0, idx, data);
 `else
 		wb_master_bfm_set_data_hvl(m_cfg.id, idx, data);
 `endif
@@ -94,7 +94,7 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 		int unsigned				idx,
 		output longint unsigned		data);
 `ifdef HAVE_HDL_VIRTUAL_INTERFACE
-		m_cfg.vif.wb_master_bfm_get_data(idx, data);
+		m_cfg.vif.wb_master_bfm_get_data_hdl(0, idx, data);
 `else
 		wb_master_bfm_get_data_hvl(m_cfg.id, idx, data);
 `endif
@@ -107,8 +107,7 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 		int unsigned				SEL,
 		byte unsigned				WE);
 `ifdef HAVE_HDL_VIRTUAL_INTERFACE
-		m_cfg.vif.wb_master_bfm_request(addr, 1, 1, mask, 
-				item.is_write);
+		m_cfg.vif.wb_master_bfm_request_hdl(0, ADR, CTI, BTE, SEL, WE);
 `else
 		wb_master_bfm_request_hvl(
 				m_cfg.id, ADR, CTI, BTE, SEL, WE);

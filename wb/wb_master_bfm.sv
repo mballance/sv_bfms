@@ -229,7 +229,9 @@ interface wb_master_bfm_core(
 	
 	task send_reset_done();
 `ifdef HAVE_HDL_VIRTUAL_INTERFACE
+		$display("--> send reset");
 		m_api.reset();
+		$display("<-- send reset");
 `else
 		wb_master_bfm_reset_hdl(m_id);
 `endif
