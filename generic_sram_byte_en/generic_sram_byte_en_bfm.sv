@@ -88,8 +88,6 @@ interface `GENERIC_SRAM_BYTE_EN_BFM_NAME #(
     		
     		for (i=0; i<DATA_WIDTH/8; i++) begin
     			if (i_byte_enable[i]) begin
-    				$display("Write: 'h%08h <= 'h%02h", 
-    						addr+i, ((i_write_data >> 8*i) & 'hff));
     				u_core.mem[addr+i] = (i_write_data >> 8*i);
     			end
     		end            
@@ -107,7 +105,6 @@ interface generic_sram_byte_en_bfm_core;
 		longint unsigned	offset,
 		int unsigned 		data);
 		mem[offset] = data;
-		$display("-- write8 'h%08h='h%02h ('h%02h)", offset, data, mem[offset]);
 	endtask
     
 	task generic_sram_byte_en_bfm_write16(
