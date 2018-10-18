@@ -7,7 +7,9 @@
 
 package uart_serial_agent_pkg;
 	import uvm_pkg::*;
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 	import uart_serial_api_pkg::*;
+`endif
 
 	`include "uart_serial_config.svh"
 	`include "uart_serial_seq_item.svh"

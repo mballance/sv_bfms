@@ -10,8 +10,13 @@ class hella_cache_master_config `hella_cache_master_plist extends uvm_object;
 	`uvm_object_param_utils (this_t)
 		
 	typedef `hella_cache_master_vif_t vif_t;
-	
+
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 	vif_t				vif;
+`else
+	string				path;
+	int unsigned		id;
+`endif
 	
 	static const string report_id = "hella_cache_master_config";
 	

@@ -65,14 +65,22 @@ interface hella_cache_master_bfm_core #(
 		input			reset
 		);
 //pragma attribute hella_cache_master_bfm_core partition_interface_xif
-
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 	import hella_cache_master_api_pkg::*;
+`endif /* HAVE_HDL_VIRTUAL_INTERFACE */
 	
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 	hella_cache_master_api			api;
-	//disabled-pragma tbx one_way_caller_opt api.bfm_rsp on
-`ifdef UNDEFINED	
+`else
+		int unsigned				m_id;
+		
+		import "DPI-C" context function int unsigned hella_cache_master_bfm_register(string path);
+		
+		initial begin
+			m_id = hella_cache_master_bfm_register($sformatf("%m"));
+		end
 `endif
-	
+	//disabled-pragma tbx one_way_caller_opt api.bfm_rsp on
 	typedef struct packed {
 		bit[NUM_ADDR_BITS-1:0]		addr;
 		bit[NUM_TAG_BITS-1:0]		tag;
@@ -110,12 +118,21 @@ interface hella_cache_master_bfm_core #(
 	} req_state_e;
 	
 	req_state_e					req_state;
+	bit							in_reset = 0;
 	
 	always @(posedge clock) begin
 		if (reset == 1) begin
 			req_state <= REQ_STATE_IDLE;
 			next_req_taken <= 0;
+			in_reset <= 1;
 		end else begin
+			if (in_reset) begin
+				rst();
+				in_reset <= 0;
+			end else begin
+			if (rsp_valid == 1) begin
+				rsp(rsp_tag, rsp_typ, rsp_data);
+			end
 			case (req_state)
 				REQ_STATE_IDLE: begin
 					if (next_req_valid == 1) begin
@@ -146,15 +163,18 @@ interface hella_cache_master_bfm_core #(
 						// Re-issue the request
 //						$display("%0t - STATE_NACK: delaying 'h%08h", $time, req.addr);
 						req_state <= REQ_STATE_NACK1;
-					end else if (next_req_valid == 1) begin
+					end else begin
+//TODO:						rsp();
+						if (next_req_valid == 1) begin
 //						$display("%0t - STATE_NACK: next request waiting 'h%08h", $time, next_req.addr);
 						req_valid <= 1;
 						req <= next_req;
 						next_req_taken <= 1;
 						req_state <= REQ_STATE_WAIT_ACCEPT;
-					end else begin 
-//						$display("%0t - STATE_NACK: back to idle", $time);
-						req_state <= REQ_STATE_IDLE;
+						end else begin 
+//							$display("%0t - STATE_NACK: back to idle", $time);
+							req_state <= REQ_STATE_IDLE;
+						end
 					end
 				end
 				
@@ -168,6 +188,7 @@ interface hella_cache_master_bfm_core #(
 					req_state <= REQ_STATE_WAIT_ACCEPT;
 				end
 			endcase
+			end
 		end
 	end
 	
@@ -182,9 +203,9 @@ interface hella_cache_master_bfm_core #(
 //		$display("--> %0t - %m send_req 'h%08h", $time, addr);
 		
 		// Wait for reset
-		while (reset == 1) begin
-			@(posedge clock);
-		end
+//		while (reset == 1) begin
+//			@(posedge clock);
+//		end
 
 //		$display("Assign req_cmd=%0d req_typ=%0d", req_cmd, req_typ);
 		next_req.addr = addr;
@@ -196,9 +217,9 @@ interface hella_cache_master_bfm_core #(
 	
 		// Wait for ready
 		next_req_valid = 1;
-		do begin
-			@(posedge clock);
-		end while (next_req_taken == 0);
+//		do begin
+//			@(posedge clock);
+//		end while (next_req_taken == 0);
 		next_req_taken = 0;
 		next_req_valid = 0;
 		
@@ -206,16 +227,36 @@ interface hella_cache_master_bfm_core #(
 //		$display("<-- %0t - %m send_req 'h%08h", $time, addr);
 	endtask
 
-	always @ (posedge clock) begin
-		if (reset == 0) begin
-			if (rsp_valid == 1) begin
-				api.call_bfm_rsp(rsp_tag, rsp_typ, rsp_data);
-//				hella_cache_master_bfm_rsp(rsp_tag, rsp_typ, rsp_data);
-			end
-		end 
-	end
 `ifdef UNDEFINED	
 `endif
+
+`ifndef HAVE_HDL_VIRTUAL_INTERFACE
+	import "DPI-C" context task hella_cache_master_bfm_rsp(
+			int unsigned		id,
+			int unsigned		tag,
+			int unsigned		typ,
+			longint unsigned	data);
+`endif
+	
+	task rsp(int unsigned tag, int unsigned typ, longint unsigned data);
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
+		m_api.rsp(tag, typ, data);
+`else
+		hella_cache_master_bfm_rsp(m_id, tag, typ, data);
+`endif
+	endtask
+		
+`ifndef HAVE_HDL_VIRTUAL_INTERFACE
+	import "DPI-C" context task hella_cache_master_bfm_rst(int unsigned id);
+`endif
+		
+	task rst();
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
+		m_api.rst();
+`else
+		hella_cache_master_bfm_rst(m_id);
+`endif
+	endtask
 		
 //	task hella_cache_master_bfm_rsp(
 //		input int unsigned		tag,

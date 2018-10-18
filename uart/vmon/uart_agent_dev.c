@@ -17,7 +17,7 @@ void uart_agent_dev_init(uex_dev_t *devh) {
 // seed,
 // sz
 
-void uart_agent_dev_tx(uint32_t id, uint32_t seed, uint32_t sz) {
+void uart_agent_dev_tx(uint32_t id, uint32_t seed, uint32_t sz, uint8_t stride) {
 	uart_agent_dev_t *dev = (uart_agent_dev_t *)uex_get_device(id);
 	uintptr_t ep = (uintptr_t)dev->base.addr;
 	uint8_t data[16];
@@ -40,7 +40,7 @@ void uart_agent_dev_tx(uint32_t id, uint32_t seed, uint32_t sz) {
 	vmon_monitor_fixedlen_msg(ep, FIXEDLEN_16, data);
 }
 
-void uart_agent_dev_rx(uint32_t id, uint32_t seed, uint32_t sz) {
+void uart_agent_dev_rx(uint32_t id, uint32_t seed, uint32_t sz, uint8_t stride) {
 	uart_agent_dev_t *dev = (uart_agent_dev_t *)uex_get_device(id);
 	uintptr_t ep = (uintptr_t)dev->base.addr;
 	uint8_t data[16];

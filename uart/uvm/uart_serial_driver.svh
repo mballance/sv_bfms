@@ -54,8 +54,10 @@ class uart_serial_driver `uart_serial_plist extends uvm_driver #(uart_serial_seq
 			seq_item_port.get_next_item(item);
 			// TODO: execute the sequence item
 //			item.print();
-			
+		
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 			m_cfg.vif.uart_serial_bfm_do_tx(item.data);
+`endif
 			
 			// Send the item to the analysis port
 			ap.write(item);
