@@ -54,7 +54,8 @@ interface uart_serial_bfm_core(input clk_i, input rst_i);
 	
 		
 	bit clk_16x               = 0;
-	bit[15:0] clk_16x_divisor = ((50000000/115200)/16);
+//	bit[15:0] clk_16x_divisor = ((100000000/115200)/16);
+	bit[15:0] clk_16x_divisor = ((100000000/57600)/16);
 	bit[15:0] clk_16x_cnt     = 0;
 	bit reset_begin = 0;
 	
