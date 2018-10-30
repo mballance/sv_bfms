@@ -7,7 +7,9 @@
 
 package event_agent_pkg;
 	import uvm_pkg::*;
+`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 	import event_api_pkg::*;
+`endif
 
 	`include "event_config.svh"
 	`include "event_seq_item.svh"

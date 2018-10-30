@@ -18,6 +18,19 @@ package hella_cache_master_agent_pkg;
 	`include "hella_cache_master_agent.svh"
     `include "hella_cache_master_access_seq.svh" 
     `include "hella_cache_master_rw_api.svh"
+	
+`ifndef HAVE_HDL_VIRTUAL_INTERFACE
+	int unsigned				m_path_id_map[string];
+	int unsigned				m_id_idx = 0;
+	
+	function int unsigned hella_cache_master_bfm_register(string path); 
+		$display("hella_cache_master_bfm_register(%0s)", path);
+		m_path_id_map[path] = m_id_idx;
+		return m_id_idx++;
+	endfunction
+	export "DPI-C" function hella_cache_master_bfm_register;
+	
+`endif
 endpackage
 
 
