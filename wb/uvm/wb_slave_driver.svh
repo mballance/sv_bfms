@@ -31,9 +31,7 @@ class wb_slave_driver `wb_slave_plist extends uvm_driver #(wb_slave_seq_item);
 	
 	task run_phase(uvm_phase phase);
 		wb_slave_seq_item		item;
-`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 		`wb_slave_vif_t vif = m_cfg.vif;
-`endif
 	
 		// Prime the pump
 		seq_item_port.get_next_item(item);
@@ -41,7 +39,6 @@ class wb_slave_driver `wb_slave_plist extends uvm_driver #(wb_slave_seq_item);
 		forever begin
 			
 			// Wait for a request
-`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 			vif.wb_slave_bfm_wait_req(
 					item.addr,
 					item.byte_en,
@@ -60,7 +57,6 @@ class wb_slave_driver `wb_slave_plist extends uvm_driver #(wb_slave_seq_item);
 			// Acknowlege the request
 			vif.wb_slave_bfm_set_data(0, item.data);
 			vif.wb_slave_bfm_ack_req();
-`endif /* HAVE_HDL_VIRTUAL_INTERFACE */
 		end
 	endtask
 endclass

@@ -1,27 +1,30 @@
 
-`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 typedef class wb_master_driver;
 class wb_master_api_impl `wb_master_plist extends wb_master_api;
 	
 	wb_master_driver `wb_master_params m_drv;
 	
 	task reset();
-		m_drv.reset();
+		$display("reset: m_reset=%0d", m_drv.m_reset);
+		m_drv.m_reset = 1;
+		m_drv.m_reset_sem.put(1);
 	endtask
 		
 	task response(bit ERR);
-		m_drv.response(ERR);
+		if (m_drv.m_wait_resp) begin
+			m_drv.m_resp_err = ERR;
+			m_drv.m_resp_sem.put(1);
+		end else begin
+			$display("Warning: gratuitous response received");
+		end
 	endtask
 endclass
-`endif /* HAVE_HDL_VIRTUAL_INTERFACE */
 
 class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item);
 	
 	typedef wb_master_driver `wb_master_params this_t;
 	typedef wb_master_config `wb_master_params cfg_t;
-`ifdef HAVE_HDL_VIRTUAL_INTERFACE
 	typedef wb_master_api_impl `wb_master_params api_t;
-`endif /* HAVE_HDL_VIRTUAL_INTERFACE */
 	
 	`uvm_component_param_utils (this_t);
 
@@ -43,76 +46,21 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 	endfunction
 	
 	function void build_phase(uvm_phase phase);
+		api_t api;
 		super.build_phase(phase);
 		
 		ap = new("ap", this);
 		
+		api = new();
+		api.m_drv = this;
+		
 		m_cfg = cfg_t::get_config(this);
-
-`ifdef HAVE_HDL_VIRTUAL_INTERFACE
-		begin
-			api_t api;
-			api = new();
-			api.m_drv = this;
-			m_cfg.vif.m_api = api;
-		end
-`endif /* HAVE_HDL_VIRTUAL_INTERFACE */
+		m_cfg.vif.m_api = api;
 	endfunction
 	
 	function void connect_phase(uvm_phase phase);
 		super.connect_phase(phase);
-`ifndef HAVE_HDL_VIRTUAL_INTERFACE
-		m_cfg.id = path_id_map[m_cfg.path];
-		$display("wb_master_driver: path=%0s id=%0d", m_cfg.path, m_cfg.id);
-		id_driver_map[m_cfg.id] = this;
-`endif
 	endfunction
-	
-	task reset();
-		$display("reset: m_reset=%0d", m_reset);
-		m_reset = 1;
-		m_reset_sem.put(1);
-	endtask
-	
-	task response(byte unsigned ERR);
-		$display("response: ERR=%0d", ERR);
-		m_resp_err = ERR;
-		m_resp_sem.put(1);
-	endtask
-	
-	task set_data(
-		int unsigned				idx,
-		longint unsigned			data);
-`ifdef HAVE_HDL_VIRTUAL_INTERFACE
-		m_cfg.vif.wb_master_bfm_set_data_hdl(0, idx, data);
-`else
-		wb_master_bfm_set_data_hvl(m_cfg.id, idx, data);
-`endif
-	endtask
-	
-	task get_data(
-		int unsigned				idx,
-		output longint unsigned		data);
-`ifdef HAVE_HDL_VIRTUAL_INTERFACE
-		m_cfg.vif.wb_master_bfm_get_data_hdl(0, idx, data);
-`else
-		wb_master_bfm_get_data_hvl(m_cfg.id, idx, data);
-`endif
-	endtask
-	
-	task request(
-		longint unsigned			ADR,
-		byte unsigned				CTI,
-		byte unsigned				BTE,
-		int unsigned				SEL,
-		byte unsigned				WE);
-`ifdef HAVE_HDL_VIRTUAL_INTERFACE
-		m_cfg.vif.wb_master_bfm_request_hdl(0, ADR, CTI, BTE, SEL, WE);
-`else
-		wb_master_bfm_request_hvl(
-				m_cfg.id, ADR, CTI, BTE, SEL, WE);
-`endif
-	endtask
 	
 	/**
 	 * Task: read32
@@ -120,15 +68,16 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 	 * Override from class 
 	 */
 	virtual task read32(input bit[31:0] addr, output bit[31:0] data);
+		cfg_t::vif_t vif = m_cfg.vif;
 		m_sem.get(1);
 		if (!m_reset) begin
 			m_reset_sem.get(1);
 		end
 		m_wait_resp = 1;
-		request(addr, 1, 1, 'hf, 0);
+		vif.wb_master_bfm_request(addr, 1, 1, 'hf, 0);
 		m_resp_sem.get(1);
 		m_wait_resp = 0;
-		get_data(0, data);
+		vif.wb_master_bfm_get_data(0, data);
 		m_sem.put(1);
 	endtask
 
@@ -140,6 +89,7 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 	virtual task read8(input bit[31:0] addr, output bit[7:0] data);
 		// TODO: deal with select
 		// TODO: deal with data swizzling
+		cfg_t::vif_t vif = m_cfg.vif;
 		bit[3:0] mask;
 		bit[31:0] data_tmp;
 		
@@ -157,10 +107,10 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 		end
 		
 		m_wait_resp = 1;
-		request(addr, 1, 1, mask, 0);
+		vif.wb_master_bfm_request(addr, 1, 1, mask, 0);
 		m_resp_sem.get(1);
 		m_wait_resp = 0;
-		get_data(0, data_tmp);
+		vif.wb_master_bfm_get_data(0, data_tmp);
 //		$display("read8:   raw data='h%08h", data_tmp);
 		if (m_big_endian) begin
 			data_tmp >>= 8*(3-(addr & 3));
@@ -180,6 +130,7 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 	virtual task read16(input bit[31:0] addr, output bit[15:0] data);
 		// TODO: deal with select
 		// TODO: deal with data swizzling
+		cfg_t::vif_t vif = m_cfg.vif;
 		bit[3:0] mask;
 		bit[31:0] data_tmp;
 		
@@ -197,10 +148,10 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 		end
 		
 		m_wait_resp = 1;
-		request(addr, 1, 1, mask, 0);
+		vif.wb_master_bfm_request(addr, 1, 1, mask, 0);
 		m_resp_sem.get(1);
 		m_wait_resp = 0;
-		get_data(0, data_tmp);
+		vif.wb_master_bfm_get_data(0, data_tmp);
 		$display("read16:   raw data='h%08h", data_tmp);
 		if (m_big_endian) begin
 			data_tmp >>= 8*(2-(addr & 2));
@@ -218,14 +169,15 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 	 * Override from class 
 	 */
 	virtual task write32(input bit[31:0] addr, input bit[31:0] data);
+		cfg_t::vif_t vif = m_cfg.vif;
 		m_sem.get(1);
 		if (!m_reset) begin
 			m_reset_sem.get(1);
 		end
 		
 		m_wait_resp = 1;
-		set_data(0, data);
-		request(addr, 1, 1, 'hf, 1);
+		vif.wb_master_bfm_set_data(0, data);
+		vif.wb_master_bfm_request(addr, 1, 1, 'hf, 1);
 		m_resp_sem.get(1);
 		m_wait_resp = 0;
 		m_sem.put(1);
@@ -237,6 +189,7 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 	 * Override from class 
 	 */
 	virtual task write8(input bit[31:0] addr, input bit[7:0] data);
+		cfg_t::vif_t vif = m_cfg.vif;
 		bit[3:0] mask;
 		bit[31:0] data_tmp;
 		
@@ -258,8 +211,8 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 			m_reset_sem.get(1);
 		end
 		m_wait_resp = 1;
-		set_data(0, data_tmp);
-		request(addr, 1, 1, mask, 1);
+		vif.wb_master_bfm_set_data(0, data_tmp);
+		vif.wb_master_bfm_request(addr, 1, 1, mask, 1);
 		m_resp_sem.get(1);
 		m_wait_resp = 0;
 		m_sem.put(1);
@@ -271,6 +224,7 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 	 * Override from class 
 	 */
 	virtual task write16(input bit[31:0] addr, input bit[15:0] data);
+		cfg_t::vif_t vif = m_cfg.vif;
 		bit[3:0] mask;
 		bit[31:0] data_tmp;
 		
@@ -291,9 +245,8 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 			m_reset_sem.get(1);
 		end
 		m_wait_resp = 1;
-		set_data(0, data_tmp);
-		request(addr, 1, 1, mask, 1);
-		
+		vif.wb_master_bfm_set_data(0, data_tmp);
+		vif.wb_master_bfm_request(addr, 1, 1, mask, 1);
 		m_resp_sem.get(1);
 		m_wait_resp = 0;
 		m_sem.put(1);
@@ -301,9 +254,9 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 	
 	task run_phase(uvm_phase phase);
 		wb_master_seq_item		item;
-		bit[7:0] mask;
-		bit[63:0] data_tmp;
-		bit[63:0] addr;
+		bit[3:0] mask;
+		bit[31:0] data_tmp;
+		bit[31:0] addr;
 		
 		$display("--> run_phase: wait for reset");
 		if (!m_reset) begin
@@ -312,11 +265,10 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 		$display("<-- run_phase: wait for reset");
 		
 		forever begin
-		
-			$display("--> get_next_item()");
+			cfg_t::vif_t vif = m_cfg.vif;
+			
 			seq_item_port.get_next_item(item);
-			item.print();
-			$display("<-- get_next_item()");
+//			item.print();
 		
 			data_tmp = item.data;
 			addr = item.addr;
@@ -343,13 +295,14 @@ class wb_master_driver `wb_master_plist extends uvm_driver #(wb_master_seq_item)
 			endcase
 
 			m_wait_resp = 1;
-			set_data(0, data_tmp);
-			request(addr, 1, 1, mask, item.is_write);
+			vif.wb_master_bfm_set_data(0, data_tmp);
+			vif.wb_master_bfm_request(addr, 1, 1, mask, 
+					item.is_write);
 			m_resp_sem.get(1);
 			m_wait_resp = 0;
 	
 			if (!item.is_write) begin
-				get_data(0, data_tmp);
+				vif.wb_master_bfm_get_data(0, data_tmp);
 			
 				case (item.size) 
 					1: begin

@@ -8,14 +8,9 @@ class wb_master_config `wb_master_plist extends uvm_object;
 	
 	typedef wb_master_config `wb_master_params this_t;
 	`uvm_object_param_utils (this_t)
-
-`ifdef HAVE_HDL_VIRTUAL_INTERFACE
+		
 	typedef `wb_master_vif_t vif_t;
 	vif_t				vif;
-`else
-	string					path;
-	int unsigned			id;
-`endif
 	
 	static const string report_id = "wb_master_config";
 	
