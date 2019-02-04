@@ -3,4 +3,7 @@
 chiselscripts@https://github.com/mballance/chiselscripts/releases/download/0.0.3/chiselscripts-0.0.3.tar.gz
 chisellib@http://github.com/mballance/chisellib.git
 std_protocol_if@http://github.com/mballance/std_protocol_if.git
+#amba_sys_ip@http://github.com/mballance/amba_sys_ip.git
+googletest-hdl@https://github.com/mballance/googletest-hdl.git
+simscripts@https://github.com/mballance/simscripts.git
 

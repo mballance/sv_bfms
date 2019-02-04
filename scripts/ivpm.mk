@@ -10,11 +10,8 @@ LIB_DIR = $(SV_BFMS_DIR)/lib
 -include $(PACKAGES_DIR)/packages.mk
 include $(SV_BFMS_DIR)/etc/ivpm.info
 
-# include $(CHISELLIB_DIR)/src/chisellib.mk
-include $(PACKAGES_DIR)/chiselscripts/mkfiles/chiselscripts.mk
-include $(PACKAGES_DIR)/chisellib/mkfiles/chisellib.mk
-include $(PACKAGES_DIR)/std_protocol_if/mkfiles/std_protocol_if.mk
-include $(SV_BFMS_DIR)/mkfiles/sv_bfms.mk
+# ?
+#include $(SV_BFMS_DIR)/mkfiles/sv_bfms.mk
 
 SV_BFMS_SRC := \
   $(wildcard $(SV_BFMS_DIR)/src/sv_bfms/axi4/*.scala) \
@@ -55,9 +52,6 @@ release : build
 		tar czf chisellib-$(version).tar.gz chisellib
 	$(Q)rm -rf $(CHISELLIB_DIR)/build/chisellib
 
-include $(SV_BFMS_DIR)/mkfiles/sv_bfms.mk
-include $(PACKAGES_DIR)/chiselscripts/mkfiles/chiselscripts.mk
-include $(PACKAGES_DIR)/chisellib/mkfiles/chisellib.mk
-include $(PACKAGES_DIR)/std_protocol_if/mkfiles/std_protocol_if.mk
+#include $(SV_BFMS_DIR)/mkfiles/sv_bfms.mk
 -include $(PACKAGES_DIR)/packages.mk
 
